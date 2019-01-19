@@ -1,58 +1,66 @@
 <?php
+header( 'content-type: text/html; charset:utf-8' );
+error_reporting(0);
 
 /*
+2019-01-19 0.1.0
+- Persistent music player for single files allowing free simultaneous browsing
+
 todo:
-- highligh currently playing file: store current file in cookie
-- 
-- general playlist concept
-- when you select a file, add all following files to playlist
-- when audio ends: go to next file in playlist
+- store currently playing file in cookie to be able to persistently highlight it
+- playlist stored in cookie
+  - add files from browser (after current)
+  - remove files in playlist view
+  - reorder files in playlist view
+  - when you select a file, add all following files to playlist (?)
+    - or: separate "current directory only mode" (?)
+  - when audio ends: go to next file in playlist
 */
 
-    
-header('content-type: text/html; charset:utf-8');
-// error_reporting(0);
 
-$allowedExtensions = array("mp3", "flac");
+$allowedExtensions = array( 'mp3', 'flac' );
 
-if(!empty($_GET['play'])) {
-    ### when 'play' is set, play the indicated song and browse to its directory
+if( !empty( $_GET['play'] ) ) {
+    ### playing the indicated song and browsing to its directory
 
-    $song = sanitizeString($_GET['play']);
-    
-    if (!is_file($song)) {
-        $msg = "Could not find file $song.";
-        $song = "";
-        $dir = ".";
-        $songInfo = array();
+    $song = sanitizeString( $_GET['play'] );
+
+    if ( is_file( $song ) ) {
+        # obtaining song info and setting current directory
+        $songInfo = getsonginfo( $song );
+        $dir = dirname( $song );
+        $msg = '';
     } else {
-        $dir = dirname($song);
-        $msg = "";
-        $songInfo = getsonginfo($song);
+        # defaulting to root directory and displaying error message
+        $songInfo = array();
+        $dir = '.';
+        $msg = "Could not find file {$song}.";
+        $song = '';
     }
 
-    renderPage($song, $dir, $msg, $songInfo);
-} elseif(!empty($_GET['dir'])) {
-    ### when 'dir' is set, it significes an AJAX request for directory contents
+    renderPage( $song, $dir, $msg, $songInfo );
+} elseif( !empty( $_GET['dir'] ) )  {
+    ### responding to AJAX request for directory contents
 
-    $dir = sanitizeString($_GET['dir']);
+    $basedir = sanitizeString( $_GET['dir'] );
 
     $fileList = array();
     $dirList = array();
 
-    if (is_dir($dir)) {
-        if ($dh = opendir($dir)) {
-            while ($itemName = readdir ($dh)) {
+    # browsing given directory
+    if ( is_dir( $basedir ) ) {
+        if ( $dh = opendir( $basedir ) ) {
+            while ( $itemName = readdir( $dh ) ) {
                 # ignoring certain files
-                if ($itemName != "." && $itemName != ".." && $itemName != ".htpasswd" && $itemName != ".htaccess") {
-                    if (is_file($dir . "/" . $itemName)) {
-                        # file: adding allowed files to file array
+                if ( $itemName != '.' && $itemName != '..' && $itemName != '.htpasswd' && $itemName != '.htaccess' ) {
+                    if ( is_file( $basedir . '/' . $itemName ) ) {
+                        # found a file: adding allowed files to file array
                         $info = pathinfo( $itemName );
-                        if ( in_array( strtolower($info['extension'] ), $allowedExtensions ) ) {
-                            $fileList[] = $info['filename'] . "." . $info['extension'];
+                        if ( isset( $info['extension'] ) && in_array( strtolower( $info['extension'] ), $allowedExtensions ) ) {
+                            $fileList[] = $info['filename'] . '.' . $info['extension'];
                         }
-                    } else if (is_dir($dir . "/" . $itemName)) {
-                        # directory: adding to directory array
+                    } else if ( is_dir( $basedir . '/' . $itemName ) ) {
+                        # found a directory: adding to directory array
                         $dirList[] = $itemName;
                     }
                 }
@@ -60,87 +68,95 @@ if(!empty($_GET['play'])) {
             closedir($dh);
         }
 
-        # generating breadcrumbs
-        $breadcrumbs = explode('/', $dir);
+        # returning breadcrumbs
+        $breadcrumbs = explode( '/', $basedir );
 
         echo '<div id="breadcrumbs">';
-        for ($i = 0; $i != sizeof($breadcrumbs); $i++) {
-            $link = implode('/', array_slice($breadcrumbs, 0, $i+1));
-            $title = $breadcrumbs[$i] == "."  ? "Root"  : $breadcrumbs[$i];
+        for ( $i = 0; $i != sizeof( $breadcrumbs ); $i++ ) {
+            $title = $breadcrumbs[$i] == '.'  ? 'Root'  : $breadcrumbs[$i];
 
             if ($i == sizeof($breadcrumbs) - 1) {
                 # current directory
                 echo "<span id=\"breadcrumbactive\">{$title}</span>";
             } else {
                 # previous directories with link
-                echo "<span class=\"breadcrumb\" onclick=\"gotodir('$link');\">{$title}</span><span class=\"separator\">/</span>";
+                $link = implode( '/', array_slice( $breadcrumbs, 0, $i+1 ) );
+                echo "<span class=\"breadcrumb\" onclick=\"gotodir('{$link}');\">{$title}</span><span class=\"separator\">/</span>";
             }
         }
         echo '</div>';
 
-        # listing directories
-        if (!empty($dirList)) {
-            echo '<div class="list">';
-            foreach ($dirList as $newDir) {
-                $dirLink = $dir . "/" . $newDir;
-                echo "<div class=\"dir\" onclick=\"gotodir('$dirLink');\">$newDir</div>";
+        # returning directory list
+        if ( !empty( $dirList ) ) {
+            echo '<div id="dirlist" class="list">';
+            foreach ( $dirList as $dir ) {
+                $link = $basedir . '/' . $dir;
+                echo "<div class=\"dir\" onclick=\"gotodir('{$link}');\">{$dir}</div>";
             }
-            echo "</div>";
+            echo '</div>';
         }
 
-        # listing files
-        if (!empty($fileList)) {
-            echo '<div class="list">';
-            foreach ($fileList as $file) {
-                $link = $dir . "/" . $file;
-                echo "<div class=\"file\"><a href=\"?play=$link\">&#x25ba; $file</a></div>";
+        # returning file list
+        if ( !empty( $fileList ) ) {
+            echo '<div id="filelist" class="list">';
+            foreach ( $fileList as $file ) {
+                $link = $basedir . '/' . $file;
+                echo "<div class=\"file\"><a href=\"?play={$link}\">&#x25ba; {$file}</a></div>";
             }
-            echo "</div>";
+            echo '</div>';
         }
     }
 } else {
-    ### no special actions; rendering default site
+    ### rendering default site
     renderPage();
 }
 
-function getSongInfo($song) {
-    # using getID3 to extract song info
-    if (file_exists('./getid3/getid3.php')) {
-        require_once('./getid3/getid3.php');
+
+function getSongInfo( $song ) {
+    ### if available, using getID3 to extract song info
+
+    if ( file_exists( './getid3/getid3.php' ) ) {
+        # getting song info
+        require_once( './getid3/getid3.php' );
         $getID3 = new getID3;
-        $fileInfo = $getID3->analyze($song);
-        getid3_lib::CopyTagsToComments($fileInfo);
-        
-        if (isset($fileInfo['comments_html']['title'][0]) && !empty(trim($fileInfo['comments_html']['title'][0]))) {
-            $title = trim($fileInfo['comments_html']['title'][0]);
-        } else { 
-            $title = basename($song);
-        }
-        
-        if (isset($fileInfo['comments_html']['artist'][0]) && !empty(trim($fileInfo['comments_html']['artist'][0]))) {
-            $artist = trim($fileInfo['comments_html']['artist'][0]);
-        } else { 
-            $artist = dirname($song);
-        }
-        
-        if (isset($fileInfo['comments_html']['album'][0]) && !empty(trim($fileInfo['comments_html']['album'][0]))) {
-            $album = trim($fileInfo['comments_html']['album'][0]);
-        } else { 
-            $album = "";
-        }
-        
-        if (isset($fileInfo['comments_html']['year'][0]) && !empty(trim($fileInfo['comments_html']['year'][0]))) {
-            $year = trim($fileInfo['comments_html']['year'][0]);
-        } elseif (isset($fileInfo['comments_html']['date'][0]) && !empty(trim($fileInfo['comments_html']['date'][0]))) {
-            $year = trim($fileInfo['comments_html']['date'][0]);
+        $fileInfo = $getID3->analyze( $song );
+        getid3_lib::CopyTagsToComments( $fileInfo );
+
+        # extracting song title, or defaulting to file name
+        if ( isset( $fileInfo['comments_html']['title'][0] ) && !empty( trim( $fileInfo['comments_html']['title'][0] ) ) ) {
+            $title = trim( $fileInfo['comments_html']['title'][0] );
         } else {
-            $year = "";
+            $title = basename( $song );
         }
-        
-        if (isset($fileInfo['comments']['picture'][0])) {
-            $art = 'data:'.$fileInfo['comments']['picture'][0]['image_mime'].';charset=utf-8;base64,'.base64_encode($fileInfo['comments']['picture'][0]['data']);
-        } else { 
-            $art = "";
+
+        # extracting song artist, or defaulting to directory name
+        if ( isset( $fileInfo['comments_html']['artist'][0] ) && !empty( trim( $fileInfo['comments_html']['artist'][0] ) ) ) {
+            $artist = trim( $fileInfo['comments_html']['artist'][0] );
+        } else {
+            $artist = dirname( $song );
+        }
+
+        # extracting song album
+        if ( isset( $fileInfo['comments_html']['album'][0] ) && !empty( trim( $fileInfo['comments_html']['album'][0] ) ) ) {
+            $album = trim( $fileInfo['comments_html']['album'][0] );
+        } else {
+            $album = '';
+        }
+
+        # extracting song year/date
+        if ( isset( $fileInfo['comments_html']['year'][0] ) && !empty( trim( $fileInfo['comments_html']['year'][0] ) ) ) {
+            $year = trim( $fileInfo['comments_html']['year'][0] );
+        } elseif ( isset($fileInfo['comments_html']['date'][0] ) && !empty( trim( $fileInfo['comments_html']['date'][0] ) ) ) {
+            $year = trim( $fileInfo['comments_html']['date'][0] );
+        } else {
+            $year = '';
+        }
+
+        # extracting song picture
+        if ( isset( $fileInfo['comments']['picture'][0] ) ) {
+            $art = 'data:'.$fileInfo['comments']['picture'][0]['image_mime'].';charset=utf-8;base64,'.base64_encode( $fileInfo['comments']['picture'][0]['data'] );
+        } else {
+            $art = '';
         }
 
         return array(
@@ -151,78 +167,85 @@ function getSongInfo($song) {
             "art" => $art
         );
     } else {
+        # defaulting to song filename and directory when getID3 is not available
         return array(
-            "title" => basename($song),
-            "artist" => dirname($song),
-            "album" => "",
-            "year" => "",
-            "art" => ""
+            "title" => basename( $song ),
+            "artist" => dirname( $song ),
+            "album" => '',
+            "year" => '',
+            "art" => ''
         );
     }
 }
 
-function sanitizeString($str) {
-    $str = stripslashes($str);
+
+function sanitizeString( $str ) {
+    $str = stripslashes( $str );
 	return $str;
 }
 
-function compareName($a, $b) {
+
+function compareName( $a, $b ) {
     # name comparison for usort
-    return strnatcasecmp($a['name'], $b['name']);
+    return strnatcasecmp( $a['name'], $b['name'] );
 }
 
 
-function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
+function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
 
     # hiding error message div if there is no message to display
-    $msgDisplay = empty($msg) ? "none" : "block";
-    
+    $msgDisplay = empty( $msg ) ? 'none' : 'block';
+
     # setting player layout depending on available information
-    if (empty($songInfo)) {
-        $songTitle = "No file playing";
-        $songInfoalign = "center";
-        
-        $artist = "";
-        $artistDisplay = "none";
-        
-        $album = "";
-        $albumDisplay = "none";
-        
-        $year = "";
-        $yearDisplay = "none";
-        
-        $art = "";
-        $artDisplay = "none";
+    if ( empty( $songInfo ) ) {
+        $songTitle = 'No file playing';
+        $songInfoalign = 'center';
+
+        $artist = '';
+        $artistDisplay = 'none';
+
+        $album = '';
+        $albumDisplay = 'none';
+
+        $year = '';
+        $yearDisplay = 'none';
+
+        $art = '';
+        $artDisplay = 'none';
+
+        $pageTitle = "Music";
     } else {
         $songTitle = $songInfo['title'];
-        if (!empty($songInfo['artist'])) {
+        $pageTitle = $songTitle;
+        if ( !empty( $songInfo['artist'] ) ) {
             $artist = $songInfo['artist'];
-            $artistDisplay = "block";
+            $artistDisplay = 'block';
+            $pageTitle = "$artist - $pageTitle";
         } else {
-            $artistDisplay = "none";
+            $artistDisplay = 'none';
         }
-        if (!empty($songInfo['album'])) {
+        if ( !empty( $songInfo['album'] ) ) {
             $album = $songInfo['album'];
-            $albumDisplay = "block";
+            $albumDisplay = 'block';
         } else {
-            $album = "";
-            $albumDisplay = "none";
+            $album = '';
+            $albumDisplay = 'none';
         }
-        if (!empty($songInfo['year'])) {
+        if ( !empty( $songInfo['year'] ) ) {
             $year = $songInfo['year'];
-            $yearDisplay = "inline-block";
+            $yearDisplay = 'inline-block';
         } else {
-            $year = "";
-            $yearDisplay = "none";
+            $year = '';
+            $yearDisplay = 'none';
         }
-        if (!empty($songInfo['art'])) {
+        if ( !empty( $songInfo['art'] ) ) {
             $art = $songInfo['art'];
-            $artDisplay = "block";
-            $songInfoalign = "left";
+            $artDisplay = 'block';
+            $songInfoalign = 'left';
         } else {
-            $art = "";
-            $artDisplay = "none";
-            $songInfoalign = "center";
+            $art = '';
+            $artDisplay = 'none';
+            $songInfoalign = 'center';
         }
     }
 
@@ -234,7 +257,7 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
 <head>
     <meta charset="utf-8" />
 
-    <title>Music</title>
+    <title>{$pageTitle}</title>
 
     <script>
         function gotodir(dir){
@@ -244,7 +267,7 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
 
             xmlhttp.onreadystatechange = function() {
                 if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
-                    document.getElementById("listcontainer").innerHTML = xmlhttp.responseText;
+                    document.getElementById("interactioncontainer").innerHTML = xmlhttp.responseText;
                 }
             }
 
@@ -252,6 +275,8 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
 
             xmlhttp.send();
         }
+
+        window.onload = gotodir('{$dir}');
     </script>
 
     <style>
@@ -262,7 +287,6 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
                 background-color: #aaa; }
 
         #playercontainer {
-                box-sizing: border-box;
                 padding: 10px 0;
                 background-color: #333;
                 background-image: linear-gradient(#2a2a2a, #555); }
@@ -276,12 +300,12 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
                     background-color: #111; }
 
                 #albumart {
-                        display: $artDisplay;
+                        display: {$artDisplay};
                         width: 9vw;
                         min-width: 9vw;
                         height: 9vw;
                         margin-right: 10px;
-                        background: #996 url($art);
+                        background: #996 url({$art});
                         background-size: contain; }
 
                 #song {
@@ -292,27 +316,27 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
 
                     #songinfo {
                             color: grey;
-                            text-align: $songInfoalign;
+                            text-align: {$songInfoalign};
                             font-size: 1.5vw; }
 
                         #songinfo div {
                                 height: 1.75vw;
                                 width: 100%;
                                 overflow: hidden; }
-                                
+
                         #artist {
-                                display: $artistDisplay; }
-                                
+                                display: {$artistDisplay}; }
+
                         #album {
-                                display: $albumDisplay; }
-                                
+                                display: {$albumDisplay}; }
+
                         #year {
                                 margin-left: .35em;
-                                display: $yearDisplay; }
-                        
+                                display: {$yearDisplay}; }
+
                             #year:before {
                                     content: "("; }
-                            
+
                             #year:after {
                                     content: ")"; }
 
@@ -323,25 +347,26 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
 
         #divisor {
                 height: 10px;
-                background-color: #996; }
+                background-color: #996;
+                margin-bottom: 10px; }
 
         #message {
                 box-sizing: border-box;
                 width: 60%;
-                display: $msgDisplay;
+                display: {$msgDisplay};
                 color: white;
                 text-align: center;
-                margin: 10px auto 0 auto;
+                margin: 0 auto;
                 background-color: #a00;
                 padding: 10px; }
 
-        #listcontainer {
+        #interactioncontainer {
                 box-sizing: border-box;
                 line-height: 1.5; }
 
             #breadcrumbs {
                     width: 60%;
-                    margin: 10px auto;
+                    margin: 0 auto 10px auto;
                     color: #333;
                     background-color: #eee; }
 
@@ -390,20 +415,20 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
     </style>
 </head>
 
-<body onload="gotodir('$dir');">
+<body>
 
 <div id="playercontainer">
     <div id="player">
         <div id="albumart"></div>
         <div id="song">
             <div id="songinfo">
-                <div id="songTitle"><b>$songTitle</b></div>
-                <div id="artist">$artist</div>
-                <div id="album">$album<span id="year">$year</span></div>
+                <div id="songTitle"><b>{$songTitle}</b></div>
+                <div id="artist">{$artist}</div>
+                <div id="album">{$album}<span id="year">{$year}</span></div>
             </div>
-            <div>
+            <div id="audiocontainer">
                 <audio autoplay controls>
-                    <source src="$song" />
+                    <source src="{$song}" />
                 </audio>
             </div>
         </div>
@@ -411,8 +436,8 @@ function renderPage($song = "", $dir = ".", $msg = "", $songInfo = array()) {
 </div>
 
 <div id="divisor"></div>
-<div id="message">$msg</div>
-<div id="listcontainer"></div>
+<div id="message">{$msg}</div>
+<div id="interactioncontainer"></div>
 
 </body>
 </html>
