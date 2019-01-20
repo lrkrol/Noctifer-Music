@@ -3,11 +3,17 @@ header( 'content-type: text/html; charset:utf-8' );
 error_reporting(0);
 
 /*
+2019-01-20 0.1.5
+- Made design responsive
+- Made player sticky on top
+- Made player width customisable
+- Highlighted current song in directory index
+- Added background image
+
 2019-01-19 0.1.0
 - Persistent music player for single files allowing free simultaneous browsing
 
 todo:
-- store currently playing file in cookie to be able to persistently highlight it
 - playlist stored in cookie
   - add files from browser (after current)
   - remove files in playlist view
@@ -15,10 +21,47 @@ todo:
   - when you select a file, add all following files to playlist (?)
     - or: separate "current directory only mode" (?)
   - when audio ends: go to next file in playlist
+
+
+N O T E S
+
+cookies:
+_playmode = browse|playlist
+_playlist_browse = json array of current directory's songs
+_playlist_playlist = json array of current playlist
+_currentdir
+
+when requesting play from browser, playmode = browse, populate _playlist_browse with rest of the directory
+when requesting play from playlist, playmode = playlist
+
+update _currentdir for every browse
+
+AJAX call ?skip=1 ?skip=-1 to play next/previous; depending on _playmode, get from different _playlist; get ?play= url to redirect to
+
+always browse to _currentdir if not _viewmode = playlist
+    if _viewmode == playlist:
+        window.onload get playlist
+    elseif isset _currentdir
+        window.onload browse currentdir
+    elseif ?play=song
+        window.onload browse song directory
+    else
+        window.onload browse .
+
+    window.onload = {$onload};
+
+
+themes:
+$backgroundimg = background image name
+eval($theme[$backgroundimg]) containing all colour variables
 */
 
 
 $allowedExtensions = array( 'mp3', 'flac' );
+
+$width = '60%';
+$backgroundimg = 'bg.jpg';
+$accent = '#fc0';
 
 if( !empty( $_GET['play'] ) ) {
     ### playing the indicated song and browsing to its directory
@@ -27,6 +70,7 @@ if( !empty( $_GET['play'] ) ) {
 
     if ( is_file( $song ) ) {
         # obtaining song info and setting current directory
+        setcookie( 'noctifermusic_nowplaying', $song, strtotime( '+1 day' ) );
         $songInfo = getsonginfo( $song );
         $dir = dirname( $song );
         $msg = '';
@@ -101,7 +145,11 @@ if( !empty( $_GET['play'] ) ) {
             echo '<div id="filelist" class="list">';
             foreach ( $fileList as $file ) {
                 $link = $basedir . '/' . $file;
-                echo "<div class=\"file\"><a href=\"?play={$link}\">&#x25ba; {$file}</a></div>";
+                if ( isset( $_COOKIE['noctifermusic_nowplaying'] ) && $_COOKIE['noctifermusic_nowplaying'] == $link ) {
+                    echo "<div class=\"file nowplaying\"><a href=\"?play={$link}\">&#x25ba; {$file}</a></div>";
+                } else {
+                    echo "<div class=\"file\"><a href=\"?play={$link}\">&#x25ba; {$file}</a></div>";
+                }
             }
             echo '</div>';
         }
@@ -193,11 +241,17 @@ function compareName( $a, $b ) {
 
 function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
 
+    global $width, $backgroundimg, $accent;
+
     # hiding error message div if there is no message to display
     $msgDisplay = empty( $msg ) ? 'none' : 'block';
 
     # setting player layout depending on available information
     if ( empty( $songInfo ) ) {
+        # no information means no file is playing
+        setcookie( 'noctifermusic_nowplaying', $song, strtotime( '-1 day' ) );
+
+        # hiding info elements
         $songTitle = 'No file playing';
         $songInfoalign = 'center';
 
@@ -215,6 +269,7 @@ function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
 
         $pageTitle = "Music";
     } else {
+        # displaying info elements where available
         $songTitle = $songInfo['title'];
         $pageTitle = $songTitle;
         if ( !empty( $songInfo['artist'] ) ) {
@@ -259,6 +314,8 @@ function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
 
     <title>{$pageTitle}</title>
 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" id="viewport" />
+
     <script>
         function gotodir(dir){
             if (window.XMLHttpRequest) {
@@ -283,76 +340,88 @@ function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
         html, body {
                 width: 100%;
                 margin: 0px; padding: 0px;
-                font-family: sans-serif;
-                background-color: #aaa; }
+                font-family: sans-serif; }
 
-        #playercontainer {
-                padding: 10px 0;
-                background-color: #333;
-                background-image: linear-gradient(#2a2a2a, #555); }
+            html {
+                    background: #bbb url('{$backgroundimg}') no-repeat fixed center top;
+                    background-size: cover; }
 
-            #player {
-                    width: 60%;
-                    margin: 0 auto;
-                    display: flex;
+            body {
+                    min-height: 100vh;
                     box-sizing: border-box;
-                    padding: 10px;
-                    background-color: #111; }
+                    padding-bottom: 5px;
+                    background-color: rgba(0, 0, 0, 0.25); }
 
-                #albumart {
-                        display: {$artDisplay};
-                        width: 9vw;
-                        min-width: 9vw;
-                        height: 9vw;
-                        margin-right: 10px;
-                        background: #996 url({$art});
-                        background-size: contain; }
+        #stickycontainer {
+                position: sticky;
+                top: 0;
+                margin-bottom: 20px; }
 
-                #song {
-                        flex-grow: 1;
+            #playercontainer {
+                    padding: 20px 0;
+                    background-color: #333;
+                    background-image: linear-gradient(#2a2a2a, #555); }
+
+                #player {
+                        width: {$width};
+                        margin: 0 auto;
                         display: flex;
-                        flex-direction: column;
-                        justify-content: space-between; }
+                        box-sizing: border-box;
+                        padding: 10px;
+                        background-color: #111; }
 
-                    #songinfo {
-                            color: grey;
-                            text-align: {$songInfoalign};
-                            font-size: 1.5vw; }
+                    #albumart {
+                            display: {$artDisplay};
+                            width: 7vw;
+                            height: 7vw;
+                            margin-right: 10px;
+                            background: #996 url({$art});
+                            background-size: contain; }
 
-                        #songinfo div {
-                                height: 1.75vw;
+                    #song {
+                            flex-grow: 1;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: space-between; }
+
+                        #songinfo { }
+
+                            #songinfo div {
+                                    color: grey;
+                                    text-align: {$songInfoalign};
+                                    font-size: 1.2vw;
+                                    height: 1.4vw;
+                                    width: 100%;
+                                    overflow: hidden; }
+
+                            #artist {
+                                    display: {$artistDisplay}; }
+
+                            #album {
+                                    display: {$albumDisplay}; }
+
+                            #year {
+                                    margin-left: .35em;
+                                    display: {$yearDisplay}; }
+
+                                #year:before {
+                                        content: "("; }
+
+                                #year:after {
+                                        content: ")"; }
+
+                        #player audio {
                                 width: 100%;
-                                overflow: hidden; }
+                                height: 1.3vw;
+                                margin-top: 1.5vw; }
 
-                        #artist {
-                                display: {$artistDisplay}; }
-
-                        #album {
-                                display: {$albumDisplay}; }
-
-                        #year {
-                                margin-left: .35em;
-                                display: {$yearDisplay}; }
-
-                            #year:before {
-                                    content: "("; }
-
-                            #year:after {
-                                    content: ")"; }
-
-                    #player audio {
-                            width: 100%;
-                            height: 1.5vw;
-                            margin-top: 1.5vw; }
-
-        #divisor {
-                height: 10px;
-                background-color: #996;
-                margin-bottom: 10px; }
+                #divider {
+                        height: 2px;
+                        background-color: {$accent}; }
 
         #message {
                 box-sizing: border-box;
-                width: 60%;
+                width: {$width};
                 display: {$msgDisplay};
                 color: white;
                 text-align: center;
@@ -365,7 +434,7 @@ function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
                 line-height: 1.5; }
 
             #breadcrumbs {
-                    width: 60%;
+                    width: {$width};
                     margin: 0 auto 10px auto;
                     color: #333;
                     background-color: #eee; }
@@ -386,10 +455,10 @@ function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
                         font-weight: bold; }
 
             .list div {
-                    width: 60%;
+                    width: {$width};
                     box-sizing: border-box;
                     margin: 0 auto;
-                    padding: 10px 10px;
+                    padding: 5px 10px;
                     color: #333;
                     cursor: pointer;
                     background-color: #eee;
@@ -403,6 +472,10 @@ function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
                         background-color: #ddd;
                         font-weight: bold; }
 
+                .list .nowplaying {
+                        background-color: {$accent};
+                        font-weight: bold; }
+
                 .list .file a {
                         display: block;
                         color: #333;
@@ -412,30 +485,39 @@ function renderPage( $song = '', $dir = '.', $msg = '', $songInfo = array() ) {
                         display: block;
                         color: #fff;
                         text-decoration: none; }
+
+        @media screen and (max-width: 900px) {
+                #player, #message, #breadcrumbs, .list div { width: 95%; }
+                #albumart { width: 20vw; height: 20vw; }
+                #songinfo div { height: 4vw; font-size: 3.5vw; }
+                #player audio { height: 4vw; }
+        }
     </style>
 </head>
 
 <body>
 
-<div id="playercontainer">
-    <div id="player">
-        <div id="albumart"></div>
-        <div id="song">
-            <div id="songinfo">
-                <div id="songTitle"><b>{$songTitle}</b></div>
-                <div id="artist">{$artist}</div>
-                <div id="album">{$album}<span id="year">{$year}</span></div>
-            </div>
-            <div id="audiocontainer">
-                <audio autoplay controls>
-                    <source src="{$song}" />
-                </audio>
+<div id="stickycontainer">
+    <div id="playercontainer">
+        <div id="player">
+            <div id="albumart"></div>
+            <div id="song">
+                <div id="songinfo">
+                    <div id="songTitle"><b>{$songTitle}</b></div>
+                    <div id="artist">{$artist}</div>
+                    <div id="album">{$album}<span id="year">{$year}</span></div>
+                </div>
+                <div id="audiocontainer">
+                    <audio controls>
+                        <source src="{$song}" />
+                    </audio>
+                </div>
             </div>
         </div>
     </div>
+    <div id="divider"></div>
 </div>
 
-<div id="divisor"></div>
 <div id="message">{$msg}</div>
 <div id="interactioncontainer"></div>
 
