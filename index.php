@@ -5,6 +5,11 @@ error_reporting(0);
 
 /*
 
+2019-02-08 0.4.4
+- Prevented directories above root from being accessed
+- Escaped apostrophe in add to/remove from playlist links
+- Added "Clear playlist" button
+
 2019-01-29 0.4.1
 - Implemented playlist
 - Switched from window.onload to DOMContentLoaded event listener
@@ -35,8 +40,9 @@ error_reporting(0);
 
 
 T O D O 
-- constrain browse= calls to not go before root (disallow .. in path?)
-- when adding to playlist in playlist mode, also update active songlist (and reshuffle in shuffle mode)
+- add next/previous/stop buttons
+- add "add to playlist" button to directories: recursively add to playlist
+- password protection
 - reorder files in playlist view
 
 
@@ -50,11 +56,16 @@ mobile:
 menu button to show buttons?
 swipe left/right for next/previous
 
-playlist view:
-to determine active song, don't look at file name, look only at active Idx when playmode==playlist
+Limitations:
+- Currently, a song can only be added once to the playlist. Ability to add it more than once would
+  require the following change: to determine the active song, the script should not look at the
+  filename (as it currently does), but only at active index when playmode==playlist.
+- When in playlist playing mode, adding a new song to the playlist does not update the current list
+  of songs. Implementing this would require a solution for shuffle: the newly added song must be
+  randomly added somewhere between current and last index. 
 */
 
-$allowedExtensions = array( 'mp3', 'flac' );
+$allowedExtensions = array( 'mp3', 'flac', 'wav', 'ogg' );
 $excluded = array( '.', '..', '.htpasswd', '.htaccess', 'getid3', '.git', 'cgi-bin', 'usage', 'logs' );
 
 $width = '60%';
@@ -87,7 +98,7 @@ if( !empty( $_GET['play'] ) ) {
             $activesonglist = json_decode( $_COOKIE['nm_songs_active'], true );
         }
         setcookie( 'nm_songs_active_idx', array_search($song, $activesonglist ), strtotime ( '+1 week' ) );
-
+        
         # no error message
         $error = '';
     } else {
@@ -117,7 +128,7 @@ if( !empty( $_GET['play'] ) ) {
     ### responding to AJAX request for directory contents
     $basedir = sanitizeGet( $_GET['dir'] );
 
-    if ( is_dir( $basedir ) ) {
+    if ( is_dir( $basedir ) && !in_array('..', explode( '/', $basedir ) ) ) {
         # setting currentbrowsedir cookie
         setcookie( 'nm_currentbrowsedir', $basedir, strtotime( '+1 day' ) );
 
@@ -163,8 +174,9 @@ if( !empty( $_GET['play'] ) ) {
                 echo '<div id="filelist" class="list">';
                 foreach ( $dirContents['files'] as $file ) {
                     $link = $basedir . '/' . $file;
+                    $jslink = str_replace( "'", "\'", $link );
                     $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
-                    echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('browse');\">&#x25ba; {$file}</a><div class=\"addtoplaylist\" onclick=\"addToPlaylist('{$link}');\">+</div></div>";
+                    echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('browse');\">&#x25ba; {$file}</a><div class=\"addtoplaylist\" onclick=\"addToPlaylist('{$jslink}');\">+</div></div>";
                 } unset( $file );
                 echo '</div>';
             }
@@ -191,7 +203,8 @@ if( !empty( $_GET['play'] ) ) {
         foreach ( $playlist as $link ) {
             $song = basename( $link );
             $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
-            echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist');\">&#x25ba; {$song}</a><div class=\"addtoplaylist\" onclick=\"removeFromPlaylist('{$link}');\">-</div></div>";
+            $jslink = str_replace( "'", "\'", $link );
+            echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist');\">&#x25ba; {$song}</a><div class=\"addtoplaylist\" onclick=\"removeFromPlaylist('{$jslink}');\">-</div></div>";
         } unset( $file );
         echo '</div>';
     }
@@ -223,9 +236,19 @@ function renderButtons() {
     if ( isset( $_COOKIE['nm_currentbrowsedir'] ) ) { $dir = $_COOKIE['nm_currentbrowsedir']; }
     elseif ( isset( $_COOKIE['nm_currentsongdir'] ) ) { $dir = $_COOKIE['nm_currentsongdir']; }
     else { $dir = '.'; }
+    
+    if ( $viewMode == 'playlist' ) {
+        $playlistButtons = <<<PLBUTTONS
+        <div class="button" onclick="clearPlaylist();"><span>Clear</span></div>
+        <div class="separator"></div>
+PLBUTTONS;
+    } else {
+        $playlistButtons = '';
+    }
 
     echo <<<BUTTONS
-    <div id="buttons">
+    <div class="buttons">
+        {$playlistButtons}
         <div class="button{$shuffleActive}" id="shufflebutton" onclick="toggleShuffle();"><span>Shuffle</span></div>
         <div class="separator"></div>
         <div class="button border{$browseActive}" onclick="goToDir('{$dir}');"><span>Browse</span></div>
@@ -482,6 +505,11 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 setCookie('nm_songs_playlist', JSON.stringify(playlist), 365);
                 goToPlaylist('default');
             }
+        };
+        
+        function clearPlaylist() {
+                setCookie('nm_songs_playlist', '', 365);
+                goToPlaylist('default');
         };
 
         function setPlayMode(mode) {
@@ -751,7 +779,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                     #breadcrumbactive {
                             font-weight: bold; }
 
-                #buttons {
+                .buttons {
                         display: flex;
                         font-size: medium;
                         margin-left: 10px;
@@ -846,7 +874,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 #albumart { width: 24vw; height: 24vw; }
                 #songinfo div { height: 5vw; font-size: 4vw; }
                 #player audio { height: 5vw; }
-                #playlisttitle, #breadcrumbs, #buttons, .list { font-size: small; }
+                #playlisttitle, #breadcrumbs, .buttons, .list { font-size: small; }
         }
 
         @media screen and (max-width: 900px) and (orientation:landscape) {
@@ -855,7 +883,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 #albumart { width: 12vw; height: 12vw; }
                 #songinfo div { height: 2.5vw; font-size: 2vw; }
                 #player audio { height: 2.5vw; }
-                #playlisttitle, #breadcrumbs, #buttons, .list { font-size: small; }
+                #playlisttitle, #breadcrumbs, .buttons, .list { font-size: small; }
         }
     </style>
 </head>
