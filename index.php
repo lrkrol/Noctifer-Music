@@ -5,6 +5,17 @@ error_reporting(0);
 
 /*
 
+2019-04-06 0.5.2
+- When setting play mode, selected song now always starts at index 0 when shuffle is on
+- Equalised URI encoding of cookies
+- In playlist mode, adding/removing a song to the playlist now also updates the active songlist
+- Added password protection
+- Added buttons to reorder files in playlist
+- Added theme parameters
+
+2019-02-09 0.4.5
+- Removed background-repeat and accent colour from albumart
+
 2019-02-08 0.4.4
 - Prevented directories above root from being accessed
 - Escaped apostrophe in add to/remove from playlist links
@@ -40,39 +51,58 @@ error_reporting(0);
 
 
 T O D O 
-- add next/previous/stop buttons
-- add "add to playlist" button to directories: recursively add to playlist
-- password protection
-- reorder files in playlist view
+- swipe left/right for next/previous
 
 
-N O T E S
-
-themes:
-$backgroundimg = background image name
-eval($theme[$backgroundimg]) containing all colour variables
-
-mobile:
-menu button to show buttons?
-swipe left/right for next/previous
-
-Limitations:
-- Currently, a song can only be added once to the playlist. Ability to add it more than once would
-  require the following change: to determine the active song, the script should not look at the
-  filename (as it currently does), but only at active index when playmode==playlist.
-- When in playlist playing mode, adding a new song to the playlist does not update the current list
-  of songs. Implementing this would require a solution for shuffle: the newly added song must be
-  randomly added somewhere between current and last index. 
 */
 
 $allowedExtensions = array( 'mp3', 'flac', 'wav', 'ogg' );
-$excluded = array( '.', '..', '.htpasswd', '.htaccess', 'getid3', '.git', 'cgi-bin', 'usage', 'logs' );
+$excluded = array( '.', '..', '.git', '.htaccess', '.htpasswd', 'cgi-bin', 'getid3', 'logs', 'usage');
 
-$width = '60%';
+$width = '40%';
+
 $backgroundimg = 'bg.jpg';
-$accent = '#fc0';
+$background = '#222';
+$accentfg = '#000';
+$accentbg = '#fc0';
+$menubg = '#eee';
+$menushadow = '#ddd';
+$gradient1 = '#1a1a1a';
+$gradient2 = '#444';
+$filebuttonfg = '#bbb';
 
-if( !empty( $_GET['play'] ) ) {
+$backgroundimg = 'bg_dark.jpg';
+$background = '#333';
+$accentfg = '#000';
+$accentbg = '#fff';
+$menubg = '#ddd';
+$menushadow = '#ccc';
+$gradient1 = '#1a1a1a';
+$gradient2 = '#444';
+$filebuttonfg = '#bbb';
+
+$backgroundimg = 'bg_forest.jpg';
+$background = '#556555';
+$accentfg = '#000';
+$accentbg = '#c4dd2a';
+$menubg = '#eee';
+$menushadow = '#ddd';
+$gradient1 = '#1a1a1a';
+$gradient2 = '#444';
+$filebuttonfg = '#bbb';
+
+
+
+
+$password = '12345';
+
+
+if( isset( $_POST['password'] ) ) {
+    if ( htmlspecialchars($password) == htmlspecialchars( $_POST['password'] ) ) {
+        $_SESSION['authenticated'] = 'yes';
+        loadPage();
+    }
+} elseif( isset( $_GET['play'] ) ) {
     ### playing the indicated song
     $song = sanitizeGet( $_GET['play'] );
 
@@ -90,27 +120,28 @@ if( !empty( $_GET['play'] ) ) {
         setcookie( 'nm_nowplaying', $song, strtotime( '+1 day' ) );
         setcookie( 'nm_songs_currentsongdir', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
 
-        # updating active song index and active song list if empty
+        # updating active song list if empty
         if ( !isset ( $_COOKIE['nm_songs_active'] ) ) {
             setcookie( 'nm_songs_active', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
             $activesonglist = $dirsonglist['files'];
         } else {
             $activesonglist = json_decode( $_COOKIE['nm_songs_active'], true );
         }
-        setcookie( 'nm_songs_active_idx', array_search($song, $activesonglist ), strtotime ( '+1 week' ) );
+        
+        # updating active song index
+        setcookie( 'nm_songs_active_idx', array_search( $song, $activesonglist ), strtotime ( '+1 week' ) );
         
         # no error message
         $error = '';
     } else {
         # defaulting to root directory and displaying error message
         $songInfo = array();
-        $dir = '.';
         $error = "Could not find file {$song}.";
         $song = '';
     }
 
     loadPage( $song, $error, $songInfo );
-} elseif( !empty( $_GET['which'] ) )  {
+} elseif( isset( $_GET['which'] ) )  {
     ### responding to AJAX request for next/previous song in songlist
     $which = sanitizeGet( $_GET['which'] );
 
@@ -124,11 +155,26 @@ if( !empty( $_GET['play'] ) ) {
             echo $songlist[$currentIndex - 1];
         }
     }
-} elseif( !empty( $_GET['dir'] ) )  {
+} elseif( isset( $_GET['dir'] ) )  {
     ### responding to AJAX request for directory contents
+    
+    if ( !isset ( $_SESSION['authenticated'] ) ) {
+        # show "Password required [             ]"
+        echo <<<PASSWORDREQUEST
+<div id="header"><div id="passwordrequest">
+    Password required
+    <form action="." method="post">
+        <input type="password" name="password" id="passwordinput" />
+        <input type="submit" />
+    </form>
+</div></div>';
+PASSWORDREQUEST;
+        die();
+    }
+    
     $basedir = sanitizeGet( $_GET['dir'] );
 
-    if ( is_dir( $basedir ) && !in_array('..', explode( '/', $basedir ) ) ) {
+    if ( is_dir( $basedir ) && !in_array( '..', explode( '/', $basedir ) ) ) {
         # setting currentbrowsedir cookie
         setcookie( 'nm_currentbrowsedir', $basedir, strtotime( '+1 day' ) );
 
@@ -176,13 +222,13 @@ if( !empty( $_GET['play'] ) ) {
                     $link = $basedir . '/' . $file;
                     $jslink = str_replace( "'", "\'", $link );
                     $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
-                    echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('browse');\">&#x25ba; {$file}</a><div class=\"addtoplaylist\" onclick=\"addToPlaylist('{$jslink}');\">+</div></div>";
+                    echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('browse', '{$jslink}');\">&#x25ba; {$file}</a><div class=\"filebutton\" onclick=\"addToPlaylist('{$jslink}');\" title=\"Add to playlist\">+</div></div>";
                 } unset( $file );
                 echo '</div>';
             }
         }
     }
-} elseif( !empty( $_GET['playlist'] ) )  {
+} elseif( isset( $_GET['playlist'] ) )  {
     ### responding to AJAX request for playlist contents
 
     if ( isset( $_COOKIE['nm_songs_playlist'] ) ) {
@@ -204,7 +250,7 @@ if( !empty( $_GET['play'] ) ) {
             $song = basename( $link );
             $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
             $jslink = str_replace( "'", "\'", $link );
-            echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist');\">&#x25ba; {$song}</a><div class=\"addtoplaylist\" onclick=\"removeFromPlaylist('{$jslink}');\">-</div></div>";
+            echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist', '{$jslink}');\">&#x25ba; {$song}</a><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', -1);\"title=\"Move up\">&#x2191</div><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', 1);\"title=\"Move down\">&#x2193</div><div class=\"filebutton\" onclick=\"removeFromPlaylist('{$jslink}');\" title=\"Remove from playlist\">&#x00d7</div></div>";
         } unset( $file );
         echo '</div>';
     }
@@ -214,29 +260,19 @@ if( !empty( $_GET['play'] ) ) {
 }
 
 
-function sanitizeGet( $str ) {
-    $str = stripslashes( $str );
-	return $str;
-}
-
-
-function compareName( $a, $b ) {
-    # directory name comparison for usort
-    return strnatcasecmp( $a, $b );
-}
-
-
 function renderButtons() {
-    $shuffleActive = ( isset( $_COOKIE['nm_shuffle'] ) && $_COOKIE['nm_shuffle'] == 'on' ) ? ' active' : '';
-
+    # toggling active class for active buttons
     $viewMode = ( isset( $_COOKIE['nm_viewmode'] ) && $_COOKIE['nm_viewmode'] == 'playlist' ) ? 'playlist' : 'browse';
     $playlistActive = ( $viewMode == 'playlist' ) ? ' active' : '';
     $browseActive = ( $viewMode == 'browse' ) ? ' active' : '';
+    $shuffleActive = ( isset( $_COOKIE['nm_shuffle'] ) && $_COOKIE['nm_shuffle'] == 'on' ) ? ' active' : '';
 
+    # setting browse directory when browse mode is activated
     if ( isset( $_COOKIE['nm_currentbrowsedir'] ) ) { $dir = $_COOKIE['nm_currentbrowsedir']; }
     elseif ( isset( $_COOKIE['nm_currentsongdir'] ) ) { $dir = $_COOKIE['nm_currentsongdir']; }
     else { $dir = '.'; }
     
+    # rendering playlist buttons when in playlist mode
     if ( $viewMode == 'playlist' ) {
         $playlistButtons = <<<PLBUTTONS
         <div class="button" onclick="clearPlaylist();"><span>Clear</span></div>
@@ -246,6 +282,7 @@ PLBUTTONS;
         $playlistButtons = '';
     }
 
+    # rendering general buttons
     echo <<<BUTTONS
     <div class="buttons">
         {$playlistButtons}
@@ -287,6 +324,7 @@ function getDirContents( $dir ) {
     return array('dirs' => $dirList, 'files' => $fileList);
 }
 
+
 function getSongInfo( $song ) {
     ### if available, using getID3 to extract song info
 
@@ -296,7 +334,7 @@ function getSongInfo( $song ) {
         $getID3 = new getID3;
         $fileInfo = $getID3->analyze( $song );
         getid3_lib::CopyTagsToComments( $fileInfo );
-
+        
         # extracting song title, or defaulting to file name
         if ( isset( $fileInfo['comments_html']['title'][0] ) && !empty( trim( $fileInfo['comments_html']['title'][0] ) ) ) {
             $title = trim( $fileInfo['comments_html']['title'][0] );
@@ -354,9 +392,20 @@ function getSongInfo( $song ) {
 }
 
 
-function loadPage( $song = '', $error = '', $songInfo = array() ) {
+function sanitizeGet( $str ) {
+    $str = stripslashes( $str );
+	return $str;
+}
 
-    global $width, $backgroundimg, $accent;
+
+function compareName( $a, $b ) {
+    # directory name comparison for usort
+    return strnatcasecmp( $a, $b );
+}
+
+
+function loadPage( $song = '', $error = '', $songInfo = array() ) {
+    global $width, $background, $backgroundimg, $accentfg, $accentbg, $menubg, $menushadow, $gradient1, $gradient2, $filebuttonfg;
 
     # hiding error message div if there is no message to display
     $errorDisplay = empty( $error ) ? 'none' : 'block';
@@ -375,17 +424,12 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
     # setting player layout depending on available information
     if ( empty( $songInfo ) ) {
         # no information means no file is playing
-
-        # unsetting cookies
-        setcookie( 'nm_nowplaying', '-1', strtotime( '-1 day' ) );
-        setcookie( 'nm_songs_currentsongdir', '-1', strtotime( '-1 day' ) );
-        setcookie( 'nm_songs_active', '-1', strtotime( '-1 day' ) );
-        setcookie( 'nm_songs_active_idx', '-1', strtotime( '-1 day' ) );
-
-        # hiding info elements
         $songTitle = 'No file playing';
         $songInfoalign = 'center';
+        $songsrc = '';
+        $pageTitle = "Music";
 
+        # hiding info elements
         $artist = '';
         $artistDisplay = 'none';
 
@@ -398,7 +442,11 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
         $art = '';
         $artDisplay = 'none';
 
-        $pageTitle = "Music";
+        # unsetting cookies
+        setcookie( 'nm_nowplaying', '-1', strtotime( '-1 day' ) );
+        setcookie( 'nm_songs_currentsongdir', '-1', strtotime( '-1 day' ) );
+        setcookie( 'nm_songs_active', '-1', strtotime( '-1 day' ) );
+        setcookie( 'nm_songs_active_idx', '-1', strtotime( '-1 day' ) );
     } else {
         # displaying info elements where available
         $songsrc = " src=\"{$song}\"";
@@ -481,16 +529,46 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
             // adding song to playlist, or initialising playlist with song
             var playlist = getCookie('nm_songs_playlist');
             if (playlist) {
+                // removing song if it already exists
                 playlist = JSON.parse(playlist);
                 var songIdx = playlist.indexOf(song);
                 if (songIdx >= 0) {
                     playlist.splice(songIdx, 1);
                 }
+                
+                // adding song to playlist
                 playlist.push(song);
             } else {
                 var playlist = [song];
             }
             setCookie('nm_songs_playlist', JSON.stringify(playlist), 365);
+            
+            // if currently playing from playlist, also updating active songlist
+            var playmode = getCookie('nm_playmode');
+            if (playmode == 'playlist') {
+                var shuffle = getCookie('nm_shuffle');
+                if (shuffle == 'on') {
+                    // adding new song between current and end of current shuffled songlist
+                    var currentsong = getCookie('nm_nowplaying');
+                    var songlist = getCookie('nm_songs_active');
+                    if (songlist) {
+                        songlist = JSON.parse(songlist);
+                        var songIdx = songlist.indexOf(currentsong);
+                        var randomIdx = Math.floor(Math.random() * (songlist.length - songIdx) + songIdx + 1);
+                        songlist.splice(randomIdx, 0, song);
+                        setCookie('nm_songs_active', JSON.stringify(songlist), 7);
+                    }
+                } else {
+                    // getting current song's index in playlist
+                    var currentsong = getCookie('nm_nowplaying');
+                    var songIdx = playlist.indexOf(currentsong);
+
+                    // setting cookies
+                    setCookie('nm_songs_active', JSON.stringify(playlist), 7);
+                    setCookie('nm_songs_active_idx', songIdx, 7);
+                }
+            }
+            
         };
 
         function removeFromPlaylist(song) {
@@ -503,20 +581,63 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                     playlist.splice(songIdx, 1);
                 }
                 setCookie('nm_songs_playlist', JSON.stringify(playlist), 365);
+                
+                // if currently playing from playlist, also updating active songlist
+                var playmode = getCookie('nm_playmode');
+                if (playmode == 'playlist') {
+                    var songlist = getCookie('nm_songs_active');
+                    songlist = JSON.parse(songlist);
+                    var currentsong = getCookie('nm_nowplaying');
+                    var songIdx = songlist.indexOf(currentsong);
+                    songlist.splice(songIdx, 1)
+                    setCookie('nm_songs_active', JSON.stringify(songlist), 7);
+                }
+                    
+                // showing updated playlist
                 goToPlaylist('default');
             }
         };
         
+        function moveInPlaylist(song, direction) {
+            var playlist = getCookie('nm_songs_playlist');
+            playlist = JSON.parse(playlist);
+            var songIdx = playlist.indexOf(song);
+            if (songIdx + direction >= 0 && songIdx + direction < playlist.length) {
+                playlist.splice(songIdx, 1);
+                playlist.splice(songIdx + direction, 0, song);
+            }
+            setCookie('nm_songs_playlist', JSON.stringify(playlist), 365);
+                
+            // if currently playing from playlist, also updating active songlist
+            var playmode = getCookie('nm_playmode');
+            var shuffle = getCookie('nm_shuffle');
+            if (playmode == 'playlist' && shuffle != 'on') {
+                var currentsong = getCookie('nm_nowplaying');
+                var songIdx = playlist.indexOf(currentsong);
+                setCookie('nm_songs_active', JSON.stringify(playlist), 7);           
+                setCookie('nm_songs_active_idx', songIdx, 7);
+            }
+            
+            // showing updated playlist
+            goToPlaylist('default');
+        };
+        
         function clearPlaylist() {
-                setCookie('nm_songs_playlist', '', 365);
-                goToPlaylist('default');
+            setCookie('nm_songs_playlist', '', 365);
+                
+            var playmode = getCookie('nm_playmode');
+            if (playmode == 'playlist') {
+                setCookie('nm_songs_active', '', 7);                
+                setCookie('nm_songs_active_idx', '0', 7);
+            }
+                
+            goToPlaylist('default');
         };
 
-        function setPlayMode(mode) {
+        function setPlayMode(mode, song) {
             setCookie('nm_playmode', mode, 7);
 
             // switching to appropriate songlist, shuffling where necessary
-            var shuffle = getCookie('nm_shuffle');
             if (mode == 'browse') {
                 var songlist = getCookie('nm_songs_currentsongdir');
             } else if (mode == 'playlist') {
@@ -524,7 +645,14 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
             }
             if (songlist) {
                 songlist = JSON.parse(songlist)
-                if (shuffle == 'on') { songlist = shuffleArray(songlist); }
+                if (getCookie('nm_shuffle') == 'on') {
+                    songlist = shuffleArray(songlist);
+                    
+                    // moving selected song to index 0
+                    var songIdx = songlist.indexOf(song);
+                    songlist[songIdx] = songlist[0];
+                    songlist[0] = song;                
+                }
                 setCookie('nm_songs_active', JSON.stringify(songlist), 7);
             }
         };
@@ -556,7 +684,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 document.getElementById('shufflebutton').classList.remove('active');
 
                 // putting back original songlist
-                var playmode = getCookie('nm_playmode', playmode, 7);
+                var playmode = getCookie('nm_playmode');
                 if (playmode == 'browse') {
                     var songlist = JSON.parse(getCookie('nm_songs_currentsongdir'));
                 } else if (playmode == 'playlist') {
@@ -566,7 +694,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 // getting current song's index in that list
                 var song = getCookie('nm_nowplaying');
                 var songIdx = songlist.indexOf(song);
-
+                
                 // setting cookies
                 setCookie('nm_songs_active', JSON.stringify(songlist), 7);
                 setCookie('nm_songs_active_idx', songIdx, 7);
@@ -615,7 +743,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
             var d = new Date();
             d.setTime(d.getTime() + (exdays*24*60*60*1000));
             var expires = 'expires=' + d.toUTCString();
-            document.cookie = cname + '=' + cvalue + ';' + expires;
+            document.cookie = cname + '=' + encodeURIComponent(cvalue) + ';' + expires;
         }
 
         function getCookie(cname) {
@@ -628,7 +756,9 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                     c = c.substring(1);
                 }
                 if (c.indexOf(name) == 0) {
-                    return c.substring(name.length, c.length);
+                    var result = c.substring(name.length, c.length);
+                    result = result.replace(/\+/g, '%20');
+                    return decodeURIComponent(result);
                 }
             }
             return '';
@@ -656,7 +786,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 font-family: sans-serif; }
 
             html {
-                    background: #bbb url('{$backgroundimg}') no-repeat fixed center top;
+                    background: {$background} url('{$backgroundimg}') no-repeat fixed center top;
                     background-size: cover;}
 
             body {
@@ -673,7 +803,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
             #playercontainer {
                     padding: 20px 0;
                     background-color: #333;
-                    background-image: linear-gradient(#2a2a2a, #555); }
+                    background-image: linear-gradient({$gradient1}, {$gradient2}); }
 
                 #player {
                         width: {$width};
@@ -688,8 +818,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                             width: 7.25vw;
                             height: 7.25vw;
                             margin-right: 10px;
-                            background: #996 url({$art});
-                            background-size: contain; }
+                            background: #333 url({$art}) center center / contain no-repeat; }
 
                     #song {
                             flex-grow: 1;
@@ -730,7 +859,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
 
                 #divider {
                         height: 2px;
-                        background-color: {$accent}; }
+                        background-color: {$accentbg}; }
 
         #error {
                 box-sizing: border-box;
@@ -754,19 +883,30 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                     flex-wrap: wrap;
                     font-size: 0;
                     width: {$width};
-                    margin: 0 auto 10px auto;
-                    color: #333; }
+                    margin: 0 auto 10px auto; }
 
-                #playlisttitle, #breadcrumbs {
+                #playlisttitle, #breadcrumbs, #passwordrequest {
                         font-size: medium;
                         margin-top: 10px;
                         flex-grow: 1;
                         color: #333;
-                        background-color: #eee; }
+                        background-color: {$menubg}; }
 
                     #playlisttitle {
                             font-weight: bold;
                             padding: 10px; }
+                            
+                    #passwordrequest {
+                            display: flex;
+                            padding: 10px; }
+                            
+                    #passwordrequest form {
+                            display: flex;
+                            flex-grow: 1; }
+                            
+                        #passwordrequest #passwordinput {
+                                margin: 0 10px;
+                                flex-grow: 1; }
 
                     .breadcrumb, #breadcrumbactive {
                             display: inline-block;
@@ -774,7 +914,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
 
                     .breadcrumb:hover {
                             cursor: pointer;
-                            background-color: #ddd; }
+                            background-color: {$menushadow}; }
 
                     #breadcrumbactive {
                             font-weight: bold; }
@@ -787,20 +927,20 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
 
                     .button {
                             padding: 10px;
-                            background-color: #eee;  }
+                            background-color: {$menubg};  }
 
                         .button:hover {
                                 cursor: pointer;
-                                background-color: #ddd; }
+                                background-color: {$menushadow}; }
 
                         .border {
-                            border-right: 1px solid #ddd; }
+                            border-right: 1px solid {$menushadow}; }
 
                         .active {
                                 font-weight: bold;  }
 
                             .active span {
-                                    border-bottom: 2px solid {$accent}; }
+                                    border-bottom: 2px solid {$accentbg}; }
 
                 .separator {
                         color: #bbb;
@@ -812,8 +952,8 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                     margin: 0 auto;
                     padding: 5px 10px;
                     color: #333;
-                    background-color: #eee;
-                    border-bottom: 1px solid #ddd; }
+                    background-color: {$menubg};
+                    border-bottom: 1px solid {$menushadow}; }
 
                 .list div:last-child {
                         margin-bottom: 10px;
@@ -821,18 +961,18 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
 
                 .list .dir:hover, .list .file:hover {
                         cursor: pointer;
-                        background-color: #ddd;
+                        background-color: {$menushadow};
                         font-weight: bold; }
 
                 .list .nowplaying {
-                        background-color: {$accent};
+                        background-color: {$accentbg};
                         font-weight: bold; }
 
                     .nowplaying > div {
-                            background-color: {$accent}; }
+                            background-color: {$accentbg}; }
 
                     .nowplaying:hover > div {
-                            background-color: #eee; }
+                            background-color: {$menubg}; }
 
                 .list .file {
                         display: flex;
@@ -845,19 +985,23 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                         flex-grow: 1;
                         color: #333;
                         text-decoration: none; }
+                        
+                .list .nowplaying a {
+                        color: {$accentfg}; }
 
                 .list .file a:active {
                         display: block;
                         color: #fff;
                         text-decoration: none; }
 
-                .list .file .addtoplaylist {
+                .list .file .filebutton {
                         border-radius: 100%;
+                        border: 0;
                         width: 25px;
                         min-width: 25px;
                         height: 25px;
                         min-height: 25px;
-                        color: #bbb;
+                        color: {$filebuttonfg};
                         text-align: center;
                         font-weight: normal;
                         margin: 0;
@@ -865,9 +1009,9 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                         padding: 0;
                         display: block; }
 
-                    .list .file .addtoplaylist:hover {
-                            color: #333;
-                            background-color: {$accent}; }
+                    .list .file .filebutton:hover {
+                            color: {$accentfg};
+                            background-color: {$accentbg}; }
 
         @media screen and (max-width: 900px) and (orientation:portrait) {
                 #player, #error, #header, .list div { width: 95%; }
