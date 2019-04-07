@@ -1073,7 +1073,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 #albumart { width: 24vw; height: 24vw; }
                 #songinfo div { height: 5vw; font-size: 4vw; }
                 #player audio { height: 5vw; }
-                #playlisttitle, #breadcrumbs, .buttons, .list { font-size: small; }
+                #playlisttitle, #breadcrumbs, #passwordrequest, .buttons, .list { font-size: small; }
         }
 
         @media screen and (max-width: 900px) and (orientation:landscape) {
@@ -1082,7 +1082,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 #albumart { width: 12vw; height: 12vw; }
                 #songinfo div { height: 2.5vw; font-size: 2vw; }
                 #player audio { height: 2.5vw; }
-                #playlisttitle, #breadcrumbs, .buttons, .list { font-size: small; }
+                #playlisttitle, #breadcrumbs, #passwordrequest, .buttons, .list { font-size: small; }
         }
     </style>
 </head>
