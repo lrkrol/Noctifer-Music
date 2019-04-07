@@ -20,17 +20,17 @@ Noctifer Music uses the HTML5 `audio` tag to serve the music. Thus, format suppo
 The [**live demo**](https://music.lrk.tools/demo) has a selection of common file formats available to give them a try.
 
 ### Metadata
-Relevant metadata is rad using James Heinrich's [getID3](https://github.com/JamesHeinrich/getID3). For most file formats, this includes artist, track title, album title, year, and album art.
+Relevant metadata is read using James Heinrich's [getID3](https://github.com/JamesHeinrich/getID3). For most file formats, this includes artist, track title, album title, year, and album art.
 
 ### Custom playlist
 
-Folder-based browsing is the default, but a selection of songs can be added to a custom playlist.
+Folder-based browsing is the default, but a custom selection of songs can be added to a playlist. The order of songs in the playlist can also be changed on the fly.
 
 ![Playlist view](./playlist.jpg)
 
 ### Shuffle
 
-Shuffle mode can be toggled and will apply immediately to your current active song list, be it the current song's directory or your custom playlist.
+Shuffle mode can be toggled and will apply immediately to your current active song list, be it the current song's directory (if you selected a song to start playing from a directory) or your custom playlist (if you selected a song to start playing from the playlist).
 
 ### Uninterrupted playback while browsing or playlist editing
 
@@ -57,7 +57,7 @@ Custom background images and colour schemes can be used. Aside from the above tw
 
 ### Installation
 
-It is recommended to have **PHP 7 or higher** installed. PHP 5 should work, but has known issues with non-ASCII file names.
+It is recommended to have **PHP 7 or higher** available on your server. PHP 5 should work too, but has known issues with non-ASCII file names.
 
 To install Noctifer Music, simply copy its files to a directory. It only needs to be copied once into the root of your library. The player can navigate subdirectories, but does not allow higher directories to be accessed.
 
@@ -72,11 +72,11 @@ The `backgrounds` folder contains background images for the three included theme
 `index.php` has a small number of variables at the beginning, allowing the player to be customised.
 
 
-`$usepassword` allows password protection to be switched on (`true`) or off (`false`). When password protection is used, `$password` contains the plaintext password. This is a simple emasure to block access; do not use a password you use anywhere else for this. 
+`$usepassword` allows password protection to be switched on (`true`) or off (`false`). When password protection is used, `$password` contains the plaintext password. This is a simple measure to block access; do not use a password you use anywhere else for this. 
 
-`$allowedExtensions` is the case-insensitive array of allowed file extensions, determining which files are displayed in the list. By default, it contains `mp3`, `flac`, `wav`, `ogg`, `opus`, and `webm`. Currently, all of these can be played back in Chromium-based browsers and Firefox. Edge and Safari have significantly more limited support. Add or remove extensions from this list as needed.
+`$allowedExtensions` is a case-insensitive array of allowed file extensions, determining which files are displayed in the list. By default, it contains `mp3`, `flac`, `wav`, `ogg`, `opus`, and `webm`. Currently, all of these can be played back in Chromium-based browsers and Firefox. Edge and Safari have significantly more limited support. Add or remove extensions from this list as needed.
 
-`$excluded` is a case-sensitive blacklist of items (both files and directories) that should not be displayed in the list.
+`$excluded` is a case-sensitive blacklist of items (both files and directories) that should not be displayed when browsing.
 
 In desktop mode, `$width` determines the width of the player as a percentage of the full window's width.
 
