@@ -3,15 +3,95 @@ header( 'content-type: text/html; charset:utf-8' );
 session_start();
 error_reporting(0);
 
-/*
 
-2019-04-06 0.5.2
+/*
+Noctifer Music 0.5.5
+Copyright 2019 Laurens R Krol
+noctifer.net, lrkrol.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+# +-----------------------------------+
+# |     C O N F I G U R A T I O N     |
+# +-----------------------------------+
+
+# wether or not to ask for a password, and if yes, the password to access directory contents
+$usepassword = true;
+$password = '12345';
+
+# files with the following extensions will be displayed (case-insensitive)
+# note that it depends on your browser whether or not these will actually play
+$allowedExtensions = array( 'mp3', 'flac', 'wav', 'ogg', 'opus', 'webm' );
+
+# the following directories and files will not be displayed (case-sensitive)
+$excluded = array( '.', '..', '.git', '.htaccess', '.htpasswd', 'backgrounds', 'cgi-bin', 'docs', 'getid3', 'logs', 'usage' );
+
+# the width of the player (in desktop mode)
+$width = '40%';
+
+# different themes given by their background image and element colours
+    # "shore"
+$backgroundimg = './backgrounds/bg_shore.jpg';
+$background = '#222';
+$accentfg = '#000';
+$accentbg = '#fc0';
+$menubg = '#eee';
+$menushadow = '#ddd';
+$gradient1 = '#1a1a1a';
+$gradient2 = '#444';
+$filebuttonfg = '#bbb';
+
+    # "dark"
+$backgroundimg = './backgrounds/bg_dark.jpg';
+$background = '#333';
+$accentfg = '#000';
+$accentbg = '#fff';
+$menubg = '#ddd';
+$menushadow = '#ccc';
+$gradient1 = '#1a1a1a';
+$gradient2 = '#444';
+$filebuttonfg = '#bbb';
+
+    # "forest"
+$backgroundimg = './backgrounds/bg_forest.jpg';
+$background = '#556555';
+$accentfg = '#000';
+$accentbg = '#c4dd2a';
+$menubg = '#eee';
+$menushadow = '#ddd';
+$gradient1 = '#1a1a1a';
+$gradient2 = '#444';
+$filebuttonfg = '#bbb';
+
+
+/*
+# +---------------------------+
+# |     C H A N G E L O G     |
+# +---------------------------+
+
+2019-04-06 0.5.5
 - When setting play mode, selected song now always starts at index 0 when shuffle is on
 - Equalised URI encoding of cookies
 - In playlist mode, adding/removing a song to the playlist now also updates the active songlist
 - Added password protection
 - Added buttons to reorder files in playlist
 - Added theme parameters
+- Updated URI encoding
+- Added directory to playlist items
+- Removed file extensions from list
 
 2019-02-09 0.4.5
 - Removed background-repeat and accent colour from albumart
@@ -49,58 +129,13 @@ error_reporting(0);
 2019-01-19 0.1.0
 - Persistent music player for single files allowing free simultaneous browsing
 
-
-T O D O 
-- swipe left/right for next/previous
-
-
 */
-
-$allowedExtensions = array( 'mp3', 'flac', 'wav', 'ogg' );
-$excluded = array( '.', '..', '.git', '.htaccess', '.htpasswd', 'cgi-bin', 'getid3', 'logs', 'usage');
-
-$width = '40%';
-
-$backgroundimg = 'bg.jpg';
-$background = '#222';
-$accentfg = '#000';
-$accentbg = '#fc0';
-$menubg = '#eee';
-$menushadow = '#ddd';
-$gradient1 = '#1a1a1a';
-$gradient2 = '#444';
-$filebuttonfg = '#bbb';
-
-$backgroundimg = 'bg_dark.jpg';
-$background = '#333';
-$accentfg = '#000';
-$accentbg = '#fff';
-$menubg = '#ddd';
-$menushadow = '#ccc';
-$gradient1 = '#1a1a1a';
-$gradient2 = '#444';
-$filebuttonfg = '#bbb';
-
-$backgroundimg = 'bg_forest.jpg';
-$background = '#556555';
-$accentfg = '#000';
-$accentbg = '#c4dd2a';
-$menubg = '#eee';
-$menushadow = '#ddd';
-$gradient1 = '#1a1a1a';
-$gradient2 = '#444';
-$filebuttonfg = '#bbb';
-
-
-
-
-$password = '12345';
 
 
 if( isset( $_POST['password'] ) ) {
     if ( htmlspecialchars($password) == htmlspecialchars( $_POST['password'] ) ) {
         $_SESSION['authenticated'] = 'yes';
-        loadPage();
+        header( "Location: {$_SERVER['HTTP_REFERER']}" );
     }
 } elseif( isset( $_GET['play'] ) ) {
     ### playing the indicated song
@@ -113,11 +148,11 @@ if( isset( $_POST['password'] ) ) {
         # getting list of songs in this directory
         $dirsonglist = getDirContents( dirname( $song ) );
         foreach ($dirsonglist['files'] as &$file) {
-            $file = dirname( $song ) . '/' . $file;
+            $file = urlencode( dirname( $song ) . '/' . $file );
         } unset($file);
 
         # setting cookies
-        setcookie( 'nm_nowplaying', $song, strtotime( '+1 day' ) );
+        setcookie( 'nm_nowplaying', urlencode( $song ), strtotime( '+1 day' ) );
         setcookie( 'nm_songs_currentsongdir', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
 
         # updating active song list if empty
@@ -129,7 +164,7 @@ if( isset( $_POST['password'] ) ) {
         }
         
         # updating active song index
-        setcookie( 'nm_songs_active_idx', array_search( $song, $activesonglist ), strtotime ( '+1 week' ) );
+        setcookie( 'nm_songs_active_idx', array_search( urlencode( $song ), $activesonglist ), strtotime ( '+1 week' ) );
         
         # no error message
         $error = '';
@@ -157,8 +192,8 @@ if( isset( $_POST['password'] ) ) {
     }
 } elseif( isset( $_GET['dir'] ) )  {
     ### responding to AJAX request for directory contents
-    
-    if ( !isset ( $_SESSION['authenticated'] ) ) {
+
+    if ( $usepassword && !isset ( $_SESSION['authenticated'] ) ) {
         # show "Password required [             ]"
         echo <<<PASSWORDREQUEST
 <div id="header"><div id="passwordrequest">
@@ -169,62 +204,63 @@ if( isset( $_POST['password'] ) ) {
     </form>
 </div></div>';
 PASSWORDREQUEST;
-        die();
-    }
+    } else {
     
-    $basedir = sanitizeGet( $_GET['dir'] );
+        $basedir = sanitizeGet( $_GET['dir'] );
 
-    if ( is_dir( $basedir ) && !in_array( '..', explode( '/', $basedir ) ) ) {
-        # setting currentbrowsedir cookie
-        setcookie( 'nm_currentbrowsedir', $basedir, strtotime( '+1 day' ) );
+        if ( is_dir( $basedir ) && !in_array( '..', explode( '/', $basedir ) ) ) {
+            # setting currentbrowsedir cookie
+            setcookie( 'nm_currentbrowsedir', urlencode( $basedir ), strtotime( '+1 day' ) );
 
-        # listing directory contents
-        $dirContents = getDirContents( $basedir );
+            # listing directory contents
+            $dirContents = getDirContents( $basedir );
 
-        # returning header
-        echo '<div id="header">';
-        renderButtons();
-        echo '<div id="breadcrumbs">';
-        $breadcrumbs = explode( '/', $basedir );
-        for ( $i = 0; $i != sizeof( $breadcrumbs ); $i++ ) {
-            $title = $breadcrumbs[$i] == '.'  ? 'Root'  : $breadcrumbs[$i];
+            # returning header
+            echo '<div id="header">';
+            renderButtons();
+            echo '<div id="breadcrumbs">';
+            $breadcrumbs = explode( '/', $basedir );
+            for ( $i = 0; $i != sizeof( $breadcrumbs ); $i++ ) {
+                $title = $breadcrumbs[$i] == '.'  ? 'Root'  : $breadcrumbs[$i];
 
-            if ($i == sizeof($breadcrumbs) - 1) {
-                # current directory
-                echo "<span id=\"breadcrumbactive\">{$title}</span>";
+                if ($i == sizeof($breadcrumbs) - 1) {
+                    # current directory
+                    echo "<span id=\"breadcrumbactive\">{$title}</span>";
+                } else {
+                    # previous directories with link
+                    $link = urlencode( implode( '/', array_slice( $breadcrumbs, 0, $i+1 ) ) );
+                    echo "<span class=\"breadcrumb\" onclick=\"goToDir('{$link}');\">{$title}</span><span class=\"separator\">/</span>";
+                }
+            }
+            echo '</div>';
+            echo '</div>';
+
+            if ( empty( $dirContents['dirs'] ) && empty( $dirContents['files'] ) ) {
+                # nothing to show
+                echo '<div id="filelist" class="list"><div>This directory is empty.</div></div>';
             } else {
-                # previous directories with link
-                $link = implode( '/', array_slice( $breadcrumbs, 0, $i+1 ) );
-                echo "<span class=\"breadcrumb\" onclick=\"goToDir('{$link}');\">{$title}</span><span class=\"separator\">/</span>";
-            }
-        }
-        echo '</div>';
-        echo '</div>';
+                # returning directory list
+                if ( !empty( $dirContents['dirs'] ) ) {
+                    echo '<div id="dirlist" class="list">';
+                    foreach ( $dirContents['dirs'] as $dir ) {
+                        $link = urlencode( $basedir . '/' . $dir );
+                        echo "<div class=\"dir\" onclick=\"goToDir('{$link}');\">{$dir}</div>";
+                    } unset( $dir );
+                    echo '</div>';
+                }
 
-        if ( empty( $dirContents['dirs'] ) && empty( $dirContents['files'] ) ) {
-            # nothing to show
-            echo '<div id="filelist" class="list"><div>This directory is empty.</div></div>';
-        } else {
-            # returning directory list
-            if ( !empty( $dirContents['dirs'] ) ) {
-                echo '<div id="dirlist" class="list">';
-                foreach ( $dirContents['dirs'] as $dir ) {
-                    $link = $basedir . '/' . $dir;
-                    echo "<div class=\"dir\" onclick=\"goToDir('{$link}');\">{$dir}</div>";
-                } unset( $dir );
-                echo '</div>';
-            }
-
-            # returning file list
-            if ( !empty( $dirContents['files'] ) ) {
-                echo '<div id="filelist" class="list">';
-                foreach ( $dirContents['files'] as $file ) {
-                    $link = $basedir . '/' . $file;
-                    $jslink = str_replace( "'", "\'", $link );
-                    $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
-                    echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('browse', '{$jslink}');\">&#x25ba; {$file}</a><div class=\"filebutton\" onclick=\"addToPlaylist('{$jslink}');\" title=\"Add to playlist\">+</div></div>";
-                } unset( $file );
-                echo '</div>';
+                # returning file list
+                if ( !empty( $dirContents['files'] ) ) {
+                    echo '<div id="filelist" class="list">';
+                    foreach ( $dirContents['files'] as $file ) {
+                        $link = urlencode( $basedir . '/' . $file );
+                        $song = pathinfo( $file, PATHINFO_FILENAME );
+                        $jslink = str_replace( "'", "\'", $link );
+                        $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
+                        echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('browse', '{$jslink}');\">&#x25ba; {$song}</a><div class=\"filebutton\" onclick=\"addToPlaylist('{$jslink}');\" title=\"Add to playlist\">+</div></div>";
+                    } unset( $file );
+                    echo '</div>';
+                }
             }
         }
     }
@@ -247,10 +283,15 @@ PASSWORDREQUEST;
     } else {
         echo '<div id="filelist" class="list">';
         foreach ( $playlist as $link ) {
-            $song = basename( $link );
+            $song = pathinfo( $link, PATHINFO_FILENAME );
+            $dir = dirname( $link );
+            
+            $playlistdir = ( $dir == '.' ? '' : "<span class=\"playlistdirectory\">{$dir}</span><br />" );
+            
+            $link = urlencode( $link );
             $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
             $jslink = str_replace( "'", "\'", $link );
-            echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist', '{$jslink}');\">&#x25ba; {$song}</a><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', -1);\"title=\"Move up\">&#x2191</div><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', 1);\"title=\"Move down\">&#x2193</div><div class=\"filebutton\" onclick=\"removeFromPlaylist('{$jslink}');\" title=\"Remove from playlist\">&#x00d7</div></div>";
+            echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist', '{$jslink}');\">{$playlistdir}&#x25ba; {$song}<br /></a><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', -1);\"title=\"Move up\">&#x2191</div><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', 1);\"title=\"Move down\">&#x2193</div><div class=\"filebutton\" onclick=\"removeFromPlaylist('{$jslink}');\" title=\"Remove from playlist\">&#x00d7</div></div>";
         } unset( $file );
         echo '</div>';
     }
@@ -297,7 +338,11 @@ BUTTONS;
 
 function getDirContents( $dir ) {
     global $excluded, $allowedExtensions;
+    $allowedExtensions = array_map( 'strtolower', $allowedExtensions );
 
+    $dirList = array();
+    $fileList = array();
+    
     # browsing given directory
     if ( $dh = opendir( $dir ) ) {
         while ( $itemName = readdir( $dh ) ) {
@@ -318,8 +363,8 @@ function getDirContents( $dir ) {
         closedir($dh);
     }
 
-    usort( $dirList, 'compareName' ) ;
-    usort( $fileList, 'compareName' );
+    if ( sizeof( $dirList ) > 1 ) { usort( $dirList, 'compareName' ) ; }
+    if ( sizeof( $fileList ) > 1 ) { usort( $fileList, 'compareName' ) ; }
 
     return array('dirs' => $dirList, 'files' => $fileList);
 }
@@ -526,6 +571,8 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
         };
 
         function addToPlaylist(song) {
+            song = song.replace(/\+/g, '%20');
+            song = decodeURIComponent(song);
             // adding song to playlist, or initialising playlist with song
             var playlist = getCookie('nm_songs_playlist');
             if (playlist) {
@@ -536,7 +583,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                     playlist.splice(songIdx, 1);
                 }
                 
-                // adding song to playlist
+                // adding song to end of playlist
                 playlist.push(song);
             } else {
                 var playlist = [song];
@@ -572,6 +619,8 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
         };
 
         function removeFromPlaylist(song) {
+            song = song.replace(/\+/g, '%20');
+            song = decodeURIComponent(song);
             var playlist = getCookie('nm_songs_playlist');
             if (playlist) {
                 playlist = JSON.parse(playlist);
@@ -599,6 +648,8 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
         };
         
         function moveInPlaylist(song, direction) {
+            song = song.replace(/\+/g, '%20');
+            song = decodeURIComponent(song);
             var playlist = getCookie('nm_songs_playlist');
             playlist = JSON.parse(playlist);
             var songIdx = playlist.indexOf(song);
@@ -867,6 +918,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                 display: {$errorDisplay};
                 color: white;
                 text-align: center;
+                word-break: break-all;
                 margin: 20px auto 10px auto;
                 background-color: #a00;
                 padding: 10px; }
@@ -984,6 +1036,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                         display: block;
                         flex-grow: 1;
                         color: #333;
+                        word-break: break-all;
                         text-decoration: none; }
                         
                 .list .nowplaying a {
@@ -1012,6 +1065,10 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
                     .list .file .filebutton:hover {
                             color: {$accentfg};
                             background-color: {$accentbg}; }
+                            
+                .list .file .playlistdirectory {
+                        width: 100%;
+                        font-size: x-small; }
 
         @media screen and (max-width: 900px) and (orientation:portrait) {
                 #player, #error, #header, .list div { width: 95%; }
