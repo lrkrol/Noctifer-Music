@@ -30,7 +30,7 @@ Folder-based browsing is the default, but a custom selection of songs can be add
 
 ### Shuffle
 
-Shuffle mode can be toggled and will apply immediately to your current active song list, be it the current song's directory (if you selected a song to start playing from a directory) or your custom playlist (if you selected a song to start playing from the playlist).
+Shuffle mode can be toggled and will apply immediately to your current active song list, be it the current song's directory (if you selected a song to start playing from a directory) or your custom playlist (if you selected a song to start playing from the playlist). When shuffle is on, repeat is also on: after the last song, it will start again with a newly shuffled list.
 
 ### Uninterrupted playback while browsing or playlist editing
 
