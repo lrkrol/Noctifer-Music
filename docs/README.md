@@ -1,10 +1,10 @@
 # Noctifer Music
 
-Noctifer Music is a PHP script to turn any self-hosted audio library into an actual music player, allowing files to be easily accessed from a browser. 
+Noctifer Music is a PHP script to turn any self-hosted audio library into a functional music player running within a browser. 
+
+Try the [**live demonstration**](https://music.lrk.tools/demo) using the password 123.
 
 ![Noctifer Music Screenshot](./default.jpg)
-
-Feel free to try the [**live demonstration**](https://music.lrk.tools/demo) using the password 123.
 
 
 ## Features
@@ -38,7 +38,7 @@ Browsing and playlist editing is implemented using AJAX calls, leaving the curre
 
 ### Responsive design
 
-The player adapts to smaller viewports.
+The player adapts to smaller viewports and will work on your phone.
 
 ![Mobile view](./mobile.jpg)
 
