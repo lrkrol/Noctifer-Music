@@ -199,7 +199,7 @@ if( isset( $_POST['password'] ) ) {
     Password required
     <form action="." method="post">
         <input type="password" name="password" id="passwordinput" />
-        <input type="submit" />
+        <input type="submit" value="Submit" />
     </form>
 </div></div>';
 PASSWORDREQUEST;
