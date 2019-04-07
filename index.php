@@ -4,7 +4,7 @@ session_start();
 error_reporting(0);
 
 /*
-Noctifer Music 0.5.6
+Noctifer Music 0.5.7
 Copyright 2019 Laurens R Krol
 noctifer.net, lrkrol.com
 
@@ -81,7 +81,7 @@ $filebuttonfg = '#bbb';
 # |     C H A N G E L O G     |
 # +---------------------------+
 
-2019-04-07 0.5.6
+2019-04-07 0.5.7
 - When setting play mode, selected song now always starts at index 0 when shuffle is on
 - Equalised URI encoding of cookies
 - In playlist mode, adding/removing a song to the playlist now also updates the active songlist
@@ -92,6 +92,7 @@ $filebuttonfg = '#bbb';
 - Added directory to playlist items
 - Removed file extensions from list
 - Updated URI encoding for next/previous
+- Fixed issue with nm_songs_active not being set correctly
 
 2019-02-09 0.4.5
 - Removed background-repeat and accent colour from albumart
@@ -148,7 +149,7 @@ if( isset( $_POST['password'] ) ) {
         # getting list of songs in this directory
         $dirsonglist = getDirContents( dirname( $song ) );
         foreach ($dirsonglist['files'] as &$file) {
-            $file = urlencode( dirname( $song ) . '/' . $file );
+            $file = dirname( $song ) . '/' . $file;
         } unset($file);
 
         # setting cookies
@@ -158,7 +159,7 @@ if( isset( $_POST['password'] ) ) {
         # updating active song list and active song index
         if ( !isset ( $_COOKIE['nm_songs_active'] ) ) {
             setcookie( 'nm_songs_active', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
-            setcookie( 'nm_songs_active_idx', array_search( urlencode( $song ), $dirsonglist['files'] ), strtotime ( '+1 week' ) );
+            setcookie( 'nm_songs_active_idx', array_search( $song, $dirsonglist['files'] ), strtotime ( '+1 week' ) );
         } else {
             $activesonglist = json_decode( $_COOKIE['nm_songs_active'], true );
             setcookie( 'nm_songs_active_idx', array_search( $song, $activesonglist ), strtotime ( '+1 week' ) );
