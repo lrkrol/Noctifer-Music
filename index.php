@@ -3,7 +3,6 @@ header( 'content-type: text/html; charset:utf-8' );
 session_start();
 error_reporting(0);
 
-
 /*
 Noctifer Music 0.5.5
 Copyright 2019 Laurens R Krol
@@ -30,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # wether or not to ask for a password, and if yes, the password to access directory contents
 $usepassword = true;
-$password = '12345';
+$password = '123';
 
 # files with the following extensions will be displayed (case-insensitive)
 # note that it depends on your browser whether or not these will actually play
@@ -55,26 +54,26 @@ $gradient2 = '#444';
 $filebuttonfg = '#bbb';
 
     # "dark"
-$backgroundimg = './backgrounds/bg_dark.jpg';
-$background = '#333';
-$accentfg = '#000';
-$accentbg = '#fff';
-$menubg = '#ddd';
-$menushadow = '#ccc';
-$gradient1 = '#1a1a1a';
-$gradient2 = '#444';
-$filebuttonfg = '#bbb';
+// $backgroundimg = './backgrounds/bg_dark.jpg';
+// $background = '#333';
+// $accentfg = '#000';
+// $accentbg = '#fff';
+// $menubg = '#ddd';
+// $menushadow = '#ccc';
+// $gradient1 = '#1a1a1a';
+// $gradient2 = '#444';
+// $filebuttonfg = '#bbb';
 
     # "forest"
-$backgroundimg = './backgrounds/bg_forest.jpg';
-$background = '#556555';
-$accentfg = '#000';
-$accentbg = '#c4dd2a';
-$menubg = '#eee';
-$menushadow = '#ddd';
-$gradient1 = '#1a1a1a';
-$gradient2 = '#444';
-$filebuttonfg = '#bbb';
+// $backgroundimg = './backgrounds/bg_forest.jpg';
+// $background = '#556555';
+// $accentfg = '#000';
+// $accentbg = '#c4dd2a';
+// $menubg = '#eee';
+// $menushadow = '#ddd';
+// $gradient1 = '#1a1a1a';
+// $gradient2 = '#444';
+// $filebuttonfg = '#bbb';
 
 
 /*
@@ -154,17 +153,16 @@ if( isset( $_POST['password'] ) ) {
         # setting cookies
         setcookie( 'nm_nowplaying', urlencode( $song ), strtotime( '+1 day' ) );
         setcookie( 'nm_songs_currentsongdir', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
-
-        # updating active song list if empty
+        
+        # updating active song list and active song index
         if ( !isset ( $_COOKIE['nm_songs_active'] ) ) {
             setcookie( 'nm_songs_active', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
             $activesonglist = $dirsonglist['files'];
+            setcookie( 'nm_songs_active_idx', array_search( urlencode( $song ), $activesonglist ), strtotime ( '+1 week' ) );
         } else {
             $activesonglist = json_decode( $_COOKIE['nm_songs_active'], true );
+            setcookie( 'nm_songs_active_idx', array_search( $song, $activesonglist ), strtotime ( '+1 week' ) );
         }
-        
-        # updating active song index
-        setcookie( 'nm_songs_active_idx', array_search( urlencode( $song ), $activesonglist ), strtotime ( '+1 week' ) );
         
         # no error message
         $error = '';
