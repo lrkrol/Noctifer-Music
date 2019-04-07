@@ -157,12 +157,25 @@ if( isset( $_POST['password'] ) ) {
         setcookie( 'nm_songs_currentsongdir', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
         
         # updating active song list and active song index
-        if ( !isset ( $_COOKIE['nm_songs_active'] ) ) {
+        if ( !isset( $_COOKIE['nm_songs_active'] ) ) {
+            # if no active song list set: setting current dir as active song list 
             setcookie( 'nm_songs_active', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
             setcookie( 'nm_songs_active_idx', array_search( $song, $dirsonglist['files'] ), strtotime ( '+1 week' ) );
         } else {
             $activesonglist = json_decode( $_COOKIE['nm_songs_active'], true );
-            setcookie( 'nm_songs_active_idx', array_search( $song, $activesonglist ), strtotime ( '+1 week' ) );
+            if ( array_search( $song, $activesonglist ) === false ) {
+                # if current song not in active song list: we must be in browse mode and entered a new directory
+                if ( isset( $_COOKIE['nm_shuffle'] ) && $_COOKIE['nm_shuffle'] == 'on' ) {
+                    # if shuffle on: first shuffling list
+                    shuffle( $dirsonglist['files'] );
+                    array_splice( $dirsonglist['files'], array_search( $song, $dirsonglist['files'] ), 1 );
+                    array_unshift( $dirsonglist['files'], $song );
+                }
+                setcookie( 'nm_songs_active', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );                
+                setcookie( 'nm_songs_active_idx', array_search( $song, $dirsonglist['files'] ), strtotime ( '+1 week' ) );
+            } else {    
+                setcookie( 'nm_songs_active_idx', array_search( $song, $activesonglist ), strtotime ( '+1 week' ) );
+            }
         }
         
         # no error message
@@ -184,9 +197,9 @@ if( isset( $_POST['password'] ) ) {
         $currentIndex = $_COOKIE['nm_songs_active_idx'];
 
         if ( $which === 'next' && isset( $songlist[$currentIndex + 1] ) ) {
-            echo $songlist[$currentIndex + 1];
+            echo urlencode( $songlist[$currentIndex + 1] );
         } elseif ( $which === 'previous' && isset( $songlist[$currentIndex - 1] ) ) {
-            echo $songlist[$currentIndex - 1];
+            echo urlencode( $songlist[$currentIndex - 1] );
         }
     }
 } elseif( isset( $_GET['dir'] ) )  {
@@ -707,7 +720,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
             xmlhttp.onreadystatechange = function() {
                 if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
                     if (xmlhttp.responseText) {
-                        window.location.href = '?play=' + encodeURIComponent(xmlhttp.responseText);
+                        window.location.href = '?play=' + xmlhttp.responseText;
                     } else if (which == 'next' && getCookie('nm_shuffle') == 'on') {
                         // end of shuffle playlist: restarting shuffle
                         toggleShuffle();
