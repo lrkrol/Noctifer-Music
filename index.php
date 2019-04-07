@@ -4,7 +4,7 @@ session_start();
 error_reporting(0);
 
 /*
-Noctifer Music 0.5.5
+Noctifer Music 0.5.6
 Copyright 2019 Laurens R Krol
 noctifer.net, lrkrol.com
 
@@ -81,16 +81,17 @@ $filebuttonfg = '#bbb';
 # |     C H A N G E L O G     |
 # +---------------------------+
 
-2019-04-06 0.5.5
+2019-04-07 0.5.6
 - When setting play mode, selected song now always starts at index 0 when shuffle is on
 - Equalised URI encoding of cookies
 - In playlist mode, adding/removing a song to the playlist now also updates the active songlist
 - Added password protection
 - Added buttons to reorder files in playlist
 - Added theme parameters
-- Updated URI encoding
+- Updated URI encoding within cookies
 - Added directory to playlist items
 - Removed file extensions from list
+- Updated URI encoding for next/previous
 
 2019-02-09 0.4.5
 - Removed background-repeat and accent colour from albumart
@@ -157,8 +158,7 @@ if( isset( $_POST['password'] ) ) {
         # updating active song list and active song index
         if ( !isset ( $_COOKIE['nm_songs_active'] ) ) {
             setcookie( 'nm_songs_active', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
-            $activesonglist = $dirsonglist['files'];
-            setcookie( 'nm_songs_active_idx', array_search( urlencode( $song ), $activesonglist ), strtotime ( '+1 week' ) );
+            setcookie( 'nm_songs_active_idx', array_search( urlencode( $song ), $dirsonglist['files'] ), strtotime ( '+1 week' ) );
         } else {
             $activesonglist = json_decode( $_COOKIE['nm_songs_active'], true );
             setcookie( 'nm_songs_active_idx', array_search( $song, $activesonglist ), strtotime ( '+1 week' ) );
@@ -484,12 +484,6 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
 
         $art = '';
         $artDisplay = 'none';
-
-        # unsetting cookies
-        setcookie( 'nm_nowplaying', '-1', strtotime( '-1 day' ) );
-        setcookie( 'nm_songs_currentsongdir', '-1', strtotime( '-1 day' ) );
-        setcookie( 'nm_songs_active', '-1', strtotime( '-1 day' ) );
-        setcookie( 'nm_songs_active_idx', '-1', strtotime( '-1 day' ) );
     } else {
         # displaying info elements where available
         $songsrc = " src=\"{$song}\"";
@@ -712,7 +706,7 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
             xmlhttp.onreadystatechange = function() {
                 if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
                     if (xmlhttp.responseText) {
-                        window.location.href = '?play=' + xmlhttp.responseText;
+                        window.location.href = '?play=' + encodeURIComponent(xmlhttp.responseText);
                     } else if (which == 'next' && getCookie('nm_shuffle') == 'on') {
                         // end of shuffle playlist: restarting shuffle
                         toggleShuffle();
