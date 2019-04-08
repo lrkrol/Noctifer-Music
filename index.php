@@ -4,7 +4,7 @@ session_start();
 error_reporting(0);
 
 /*
-Noctifer Music 0.6.0
+Noctifer Music 0.6.1
 Copyright 2019 Laurens R Krol
 noctifer.net, lrkrol.com
 
@@ -81,8 +81,9 @@ $filebuttonfg = '#bbb';
 # |     C H A N G E L O G     |
 # +---------------------------+
 
-2019-04-08 0.6.0
+2019-04-08 0.6.1
 - Added keyboard shortcuts and swipe events
+- Also password-protected playlist view
 
 2019-04-07 0.5.7
 - When setting play mode, selected song now always starts at index 0 when shuffle is on
@@ -282,33 +283,46 @@ PASSWORDREQUEST;
 } elseif( isset( $_GET['playlist'] ) )  {
     ### responding to AJAX request for playlist contents
 
-    if ( isset( $_COOKIE['nm_songs_playlist'] ) ) {
-        $playlist = json_decode( $_COOKIE['nm_songs_playlist'], true );
-    }
-
-    # returning header
-    echo '<div id="header">';
-    renderButtons();
-    echo '<div id="playlisttitle">Playlist</div>';
-    echo '</div>';
-
-    if ( empty( $playlist ) ) {
-        # nothing to show
-        echo '<div id="filelist" class="list"><div>This playlist is empty.</div></div>';
+    if ( $usepassword && !isset ( $_SESSION['authenticated'] ) ) {
+        # show "Password required [             ]"
+        echo <<<PASSWORDREQUEST
+<div id="header"><div id="passwordrequest">
+    Password required
+    <form action="." method="post">
+        <input type="password" name="password" id="passwordinput" />
+        <input type="submit" value="Submit" />
+    </form>
+</div></div>';
+PASSWORDREQUEST;
     } else {
-        echo '<div id="filelist" class="list">';
-        foreach ( $playlist as $link ) {
-            $song = pathinfo( $link, PATHINFO_FILENAME );
-            $dir = dirname( $link );
-            
-            $playlistdir = ( $dir == '.' ? '' : "<span class=\"playlistdirectory\">{$dir}</span><br />" );
-            
-            $link = urlencode( $link );
-            $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
-            $jslink = str_replace( "'", "\'", $link );
-            echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist', '{$jslink}');\">{$playlistdir}&#x25ba; {$song}<br /></a><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', -1);\"title=\"Move up\">&#x2191</div><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', 1);\"title=\"Move down\">&#x2193</div><div class=\"filebutton\" onclick=\"removeFromPlaylist('{$jslink}');\" title=\"Remove from playlist\">&#x00d7</div></div>";
-        } unset( $file );
+        if ( isset( $_COOKIE['nm_songs_playlist'] ) ) {
+            $playlist = json_decode( $_COOKIE['nm_songs_playlist'], true );
+        }
+
+        # returning header
+        echo '<div id="header">';
+        renderButtons();
+        echo '<div id="playlisttitle">Playlist</div>';
         echo '</div>';
+
+        if ( empty( $playlist ) ) {
+            # nothing to show
+            echo '<div id="filelist" class="list"><div>This playlist is empty.</div></div>';
+        } else {
+            echo '<div id="filelist" class="list">';
+            foreach ( $playlist as $link ) {
+                $song = pathinfo( $link, PATHINFO_FILENAME );
+                $dir = dirname( $link );
+                
+                $playlistdir = ( $dir == '.' ? '' : "<span class=\"playlistdirectory\">{$dir}</span><br />" );
+                
+                $link = urlencode( $link );
+                $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
+                $jslink = str_replace( "'", "\'", $link );
+                echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist', '{$jslink}');\">{$playlistdir}&#x25ba; {$song}<br /></a><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', -1);\"title=\"Move up\">&#x2191</div><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', 1);\"title=\"Move down\">&#x2193</div><div class=\"filebutton\" onclick=\"removeFromPlaylist('{$jslink}');\" title=\"Remove from playlist\">&#x00d7</div></div>";
+            } unset( $file );
+            echo '</div>';
+        }
     }
 } else {
     ### rendering default site
