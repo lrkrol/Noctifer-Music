@@ -6,6 +6,8 @@ Try the [**live demo**](https://music.lrk.tools/demo) using the password 123.
 
 ![Noctifer Music Screenshot](./default.jpg)
 
+The current version 0.6.0. 
+
 
 ## Features
 
@@ -33,7 +35,7 @@ The playlist is saved in a cookie with a lifetime of one year.
 
 ### Shuffle
 
-Shuffle mode can be toggled and will apply immediately to your current active song list, be it the current song's directory (if you selected a song to start playing from a directory) or your custom playlist (if you selected a song to start playing from the playlist). When shuffle is on, repeat is also on: after the last song, it will start again with a newly shuffled list.
+Shuffle mode can be toggled and will apply immediately to your current active song list, be it the current song's directory (if you selected a song to start playing from a directory) or your custom playlist (if you selected a song to start playing from the playlist). Shuffle goes through all songs once, before starting over with a newly shuffled list: when shuffle is on, repeat is also on.
 
 ### Uninterrupted playback while browsing or playlist editing
 
@@ -103,11 +105,11 @@ The variables `$background`, `$accentfg`, `$accentbg`, `$menubg`, `$menushadow`,
 
 ### Usage
 
-One thing to note is the method of mode switching between **browse** and **playlist**.
+One thing to note is the method of mode switching between **browse** and **playlist**. There is a difference between *view* and *playback* mode.
 
-Playing songs in **browse mode** means that songs are served from that directory. That is, if you start playing a song from a specific directory in browse mode, the next song will be the next song in that same directory. When shuffle is on, the next song will be a randomly selected one from that same directory.
+Playing songs in **browse playback mode** (or directory playback mode) means that songs are served from a specific directory. That is, if you start playing a song from a specific directory in browse mode, the next song will be the next song in that same directory. When shuffle is on, the next song will be a randomly selected one from that same directory.
 
-Playing songs in **playlist mode** means that songs are served from the playlist. If you start playing a song from your playlist, the next song will be the next song in your playlist. When shuffle is on, the next song will be a randomly selected song from your playlist.
+Playing songs in **playlist playback mode** means that songs are served from the playlist. If you start playing a song from your playlist, the next song will be the next song in your playlist. When shuffle is on, the next song will be a randomly selected song from your playlist.
 
 Clicking on either of the browse or playlist buttons switches to browse or playlist **view**. Only when a song is manually started from within browse or playlist view, does the player switch to the corresponding playback mode. This means that you can freely browse songs or edit your playlist without affecting the originally selected order of playback.
 
