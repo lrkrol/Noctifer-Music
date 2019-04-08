@@ -17,10 +17,11 @@ Simply drop `index.php` into any online directory that has audio files (and/or s
 
 Noctifer Music uses the HTML5 `audio` tag to serve the music. Thus, format support is entirely dependent on your browser. 
 
-The [**live demo**](https://music.lrk.tools/demo) has a selection of common file formats available to give them a try.
+The [**live demo**](https://music.lrk.tools/demo) has a selection of common file formats available in the *Different formats* folder, so you can see what works in your browser. (The other folders contain MP3 files, which should work everywhere.)
 
 ### Metadata
-Relevant metadata is read using James Heinrich's [getID3](https://github.com/JamesHeinrich/getID3). For most file formats, this includes artist, track title, album title, year, and album art.
+
+The songs' metadata is read using James Heinrich's [getID3](https://github.com/JamesHeinrich/getID3). For most file formats, this includes artist, track title, album title, year, and album art.
 
 ### Custom playlist
 
@@ -99,6 +100,16 @@ The `backgrounds` folder contains background images for the three included theme
 In desktop mode, `$width` determines the width of the player as a percentage of the full window's width.
 
 The variables `$background`, `$accentfg`, `$accentbg`, `$menubg`, `$menushadow`, `$gradient1`, `$gradient2` and `$filebuttonfg` take hexadecimal colour values to adjust the colour scheme of the player. `$backgroundimg` takes an image path for the background image; `$background` is only visible when no image is indicated. Three theme configurations are included; these can be commented/uncommented as desired. 
+
+### Usage
+
+One thing to note is the method of mode switching between **browse** and **playlist**.
+
+Playing songs in **browse mode** means that songs are served from that directory. That is, if you start playing a song from a specific directory in browse mode, the next song will be the next song in that same directory. When shuffle is on, the next song will be a randomly selected one from that same directory.
+
+Playing songs in **playlist mode** means that songs are served from the playlist. If you start playing a song from your playlist, the next song will be the next song in your playlist. When shuffle is on, the next song will be a randomly selected song from your playlist.
+
+Clicking on either of the browse or playlist buttons switches to browse or playlist **view**. Only when a song is manually started from within browse or playlist view, does the player switch to the corresponding playback mode. This means that you can freely browse songs or edit your playlist without affecting the originally selected order of playback.
 
 
 ## Limitations
