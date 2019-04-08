@@ -2,7 +2,7 @@
 
 Noctifer Music is a PHP script to turn any self-hosted audio library into a functional music player running within a browser. 
 
-Try the [**live demonstration**](https://music.lrk.tools/demo) using the password 123.
+Try the [**live demo**](https://music.lrk.tools/demo) using the password 123.
 
 ![Noctifer Music Screenshot](./default.jpg)
 
@@ -28,6 +28,8 @@ Folder-based browsing is the default, but a custom selection of songs can be add
 
 ![Playlist view](./playlist.jpg)
 
+The playlist is saved in a cookie with a lifetime of one year.
+
 ### Shuffle
 
 Shuffle mode can be toggled and will apply immediately to your current active song list, be it the current song's directory (if you selected a song to start playing from a directory) or your custom playlist (if you selected a song to start playing from the playlist). When shuffle is on, repeat is also on: after the last song, it will start again with a newly shuffled list.
@@ -41,6 +43,22 @@ Browsing and playlist editing is implemented using AJAX calls, leaving the curre
 The player adapts to smaller viewports and will work on your phone.
 
 ![Mobile view](./mobile.jpg)
+
+### Keyboard shortcuts and swipes
+
+Noctifer Music uses the original WinAMP keyboard shortcuts, where
+
+* `z` goes to the previous song;
+* `x` plays/restarts the song*;
+* `c` pauses/resumes the song;
+* `v` stops the song*; and
+* `b` advances to the next song.
+
+*) These are implemented using `fastSeek`, which is not available on all browsers yet.
+
+Additionally, `left` and `right` button presses also switch to the previous/next track.
+
+On mobile, swiping left/right switches to the next/previous track.
 
 ### Password protection
 
@@ -81,3 +99,11 @@ The `backgrounds` folder contains background images for the three included theme
 In desktop mode, `$width` determines the width of the player as a percentage of the full window's width.
 
 The variables `$background`, `$accentfg`, `$accentbg`, `$menubg`, `$menushadow`, `$gradient1`, `$gradient2` and `$filebuttonfg` take hexadecimal colour values to adjust the colour scheme of the player. `$backgroundimg` takes an image path for the background image; `$background` is only visible when no image is indicated. Three theme configurations are included; these can be commented/uncommented as desired. 
+
+
+## Limitations
+
+* A song can only be added once to a playlist. Adding it again will move it to the end of the list.
+* There is only one playlist, and no option to save/load playlists. 
+* It appears WEBM metadata is not read properly.
+* Not all colours are represented as variables yet.
