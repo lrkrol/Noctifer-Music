@@ -4,7 +4,7 @@ session_start();
 error_reporting(0);
 
 /*
-Noctifer Music 0.5.7
+Noctifer Music 0.6.0
 Copyright 2019 Laurens R Krol
 noctifer.net, lrkrol.com
 
@@ -80,6 +80,9 @@ $filebuttonfg = '#bbb';
 # +---------------------------+
 # |     C H A N G E L O G     |
 # +---------------------------+
+
+2019-04-08 0.6.0
+- Added keyboard shortcuts and swipe events
 
 2019-04-07 0.5.7
 - When setting play mode, selected song now always starts at index 0 when shuffle is on
@@ -833,6 +836,82 @@ function loadPage( $song = '', $error = '', $songInfo = array() ) {
             });
 
             {$onLoadGoTo}
+        }, false);
+        
+        document.onkeydown = function(e){
+            switch (e.keyCode) {
+                case 90: // z
+                    advance('previous');
+                    break;
+                case 88: // x
+                    document.getElementById('audio').play();
+                    document.getElementById('audio').fastSeek(0);
+                    break;
+                case 67: // c
+                    var audio = document.getElementById('audio');
+                    if (audio.paused) {
+                        audio.play();
+                    } else {
+                        audio.pause();
+                    }
+                    break;
+                case 86: // v
+                    document.getElementById('audio').pause();
+                    document.getElementById('audio').fastSeek(0);
+                    break;
+                case 66: // b
+                    advance('next');
+                    break;
+                case 37: // left
+                    advance('previous');
+                    break;
+                case 39: // right
+                    advance('next');
+                    break;
+                case 13: // enter
+                    toggleView('$photoUrl');
+                    break;
+            }
+        };
+        
+        function swipedetect(el, callback){
+            // based on code from JavaScript Kit @ http://www.javascriptkit.com/javatutors/touchevents2.shtml
+            var touchsurface = el,
+                swipedir,
+                startX,
+                startY,
+                distX,
+                distY,
+                threshold = 50,
+                handleswipe = callback || function(swipedir){}
+            touchsurface.addEventListener('touchstart', function(e){
+                var touchobj = e.changedTouches[0]
+                swipedir = 'none'
+                dist = 0
+                startX = touchobj.pageX
+                startY = touchobj.pageY
+            }, false)
+            touchsurface.addEventListener('touchend', function(e){
+                var touchobj = e.changedTouches[0]
+                distX = touchobj.pageX - startX
+                distY = touchobj.pageY - startY
+                if (Math.abs(distX) >= threshold && Math.abs(distX) > Math.abs(distY)){
+                    swipedir = (distX < 0)? 'left' : 'right'
+                } else if (Math.abs(distY) >= threshold && Math.abs(distY) > Math.abs(distX)){
+                    swipedir = (distY < 0)? 'up' : 'down'
+                }
+                handleswipe(swipedir)
+            }, false)
+        };
+        window.addEventListener('load', function(){
+            var el = document.getElementById('interactioncontainer');
+            swipedetect(el, function(swipedir){
+                if (swipedir == 'left'){
+                    advance('next');
+                } else if (swipedir == 'right'){
+                    advance('previous');
+                }
+            })
         }, false);
     </script>
 
