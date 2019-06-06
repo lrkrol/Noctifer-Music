@@ -117,6 +117,6 @@ Clicking on either of the browse or playlist buttons switches to browse or playl
 ## Limitations
 
 * A song can only be added once to a playlist. Adding it again will move it to the end of the list.
-* There is only one playlist, and no option to save/load playlists. 
+* There is only one playlist, and no option to export/import playlists. (It is saved only in a cookie.)
 * It appears WEBM metadata is not read properly.
 * Not all colours are represented as variables yet.
