@@ -20,6 +20,9 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+------------------------------------------
+This script was modified for personal use (changed the color sheme)
 */
 
 
@@ -28,53 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # +-----------------------------------+
 
 # whether or not to ask for a password, and if yes, the password to access directory/playlist contents
-$usepassword = true;
-$password = '123';
-
-# files with the following extensions will be displayed (case-insensitive)
-# note that it depends on your browser whether or not these will actually play
-$allowedextensions = array( 'mp3', 'flac', 'wav', 'ogg', 'opus', 'webm' );
-
-# the following directories and files will not be displayed (case-sensitive)
-$excluded = array( '.', '..', '.git', '.htaccess', '.htpasswd', 'backgrounds', 'cgi-bin', 'docs', 'getid3', 'logs', 'usage' );
-
-# the width of the player (in desktop mode)
-$width = '40%';
-
-# different themes given by their background image and element colours
-    # "shore"
-$backgroundimg = './backgrounds/bg_shore.jpg';
-$background = '#222';
-$accentfg = '#000';
-$accentbg = '#fc0';
-$menubg = '#eee';
-$menushadow = '#ddd';
-$gradient1 = '#1a1a1a';
-$gradient2 = '#444';
-$filebuttonfg = '#bbb';
-
-    # "dark"
-// $backgroundimg = './backgrounds/bg_dark.jpg';
-// $background = '#333';
-// $accentfg = '#000';
-// $accentbg = '#fff';
-// $menubg = '#ddd';
-// $menushadow = '#ccc';
-// $gradient1 = '#1a1a1a';
-// $gradient2 = '#444';
-// $filebuttonfg = '#bbb';
-
-    # "forest"
-// $backgroundimg = './backgrounds/bg_forest.jpg';
-// $background = '#556555';
-// $accentfg = '#000';
-// $accentbg = '#c4dd2a';
-// $menubg = '#eee';
-// $menushadow = '#ddd';
-// $gradient1 = '#1a1a1a';
-// $gradient2 = '#444';
-// $filebuttonfg = '#bbb';
-
+# ! moved to config.php
+include("config.php");
 
 /*
 # +---------------------------+
@@ -213,10 +171,10 @@ if( isset( $_POST['password'] ) ) {
         # show "Password required [             ]"
         echo <<<PASSWORDREQUEST
 <div id="header"><div id="passwordrequest">
-    Password required
+    {$password_text}
     <form action="." method="post">
         <input type="password" name="password" id="passwordinput" />
-        <input type="submit" value="Submit" />
+        <input type="submit" value=" {$password_submit_text}" />
     </form>
 </div></div>';
 PASSWORDREQUEST;
@@ -237,7 +195,7 @@ PASSWORDREQUEST;
             echo '<div id="breadcrumbs">';
             $breadcrumbs = explode( '/', $basedir );
             for ( $i = 0; $i != sizeof( $breadcrumbs ); $i++ ) {
-                $title = $breadcrumbs[$i] == '.'  ? 'Root'  : $breadcrumbs[$i];
+                $title = $breadcrumbs[$i] == '.'  ? $root_directory_text  : $breadcrumbs[$i];
 
                 if ($i == sizeof($breadcrumbs) - 1) {
                     # current directory
@@ -253,7 +211,7 @@ PASSWORDREQUEST;
 
             if ( empty( $dircontents['dirs'] ) && empty( $dircontents['files'] ) ) {
                 # nothing to show
-                echo '<div id="filelist" class="list"><div>This directory is empty.</div></div>';
+                echo '<div id="filelist" class="list"><div>'.$directory_empty_text.'</div></div>';
             } else {
                 # returning directory list
                 if ( !empty( $dircontents['dirs'] ) ) {
@@ -287,7 +245,7 @@ PASSWORDREQUEST;
         # show "Password required [             ]"
         echo <<<PASSWORDREQUEST
 <div id="header"><div id="passwordrequest">
-    Password required
+    Geslo:
     <form action="." method="post">
         <input type="password" name="password" id="passwordinput" />
         <input type="submit" value="Submit" />
@@ -302,12 +260,12 @@ PASSWORDREQUEST;
         # returning header
         echo '<div id="header">';
         renderButtons();
-        echo '<div id="playlisttitle">Playlist</div>';
+        echo '<div id="playlisttitle">'.$playlist_text.'</div>';
         echo '</div>';
 
         if ( empty( $playlist ) ) {
             # nothing to show
-            echo '<div id="filelist" class="list"><div>This playlist is empty.</div></div>';
+            echo '<div id="filelist" class="list"><div>'.$playlist_empty_text.'</div></div>';
         } else {
             echo '<div id="filelist" class="list">';
             foreach ( $playlist as $link ) {
@@ -331,6 +289,9 @@ PASSWORDREQUEST;
 
 
 function renderButtons() {
+    // language settings
+    global $empty_song_title, $music_title, $shuffle_text, $browse_text, $playlist_text, $root_directory_text, $clear_text, $playlist_empty_text, $directory_empty_text;
+
     # toggling active class for active buttons
     $viewmode = ( isset( $_COOKIE['nm_viewmode'] ) && $_COOKIE['nm_viewmode'] == 'playlist' ) ? 'playlist' : 'browse';
     $playlistactive = ( $viewmode == 'playlist' ) ? ' active' : '';
@@ -345,7 +306,7 @@ function renderButtons() {
     # rendering playlist buttons when in playlist mode
     if ( $viewmode == 'playlist' ) {
         $playlistbuttons = <<<PLBUTTONS
-        <div class="button" onclick="clearPlaylist();"><span>Clear</span></div>
+        <div class="button" onclick="clearPlaylist();"><span>{$clear_text}</span></div>
         <div class="separator"></div>
 PLBUTTONS;
     } else {
@@ -356,10 +317,10 @@ PLBUTTONS;
     echo <<<BUTTONS
     <div class="buttons">
         {$playlistbuttons}
-        <div class="button{$shuffleactive}" id="shufflebutton" onclick="toggleShuffle();"><span>Shuffle</span></div>
+        <div class="button{$shuffleactive}" id="shufflebutton" onclick="toggleShuffle();"><span>{$shuffle_text}</span></div>
         <div class="separator"></div>
-        <div class="button border{$browseactive}" onclick="goToDir('{$dir}');"><span>Browse</span></div>
-        <div class="button{$playlistactive}" onclick="goToPlaylist('default')"><span>Playlist</span></div>
+        <div class="button border{$browseactive}" onclick="goToDir('{$dir}');"><span>{$browse_text}</span></div>
+        <div class="button{$playlistactive}" onclick="goToPlaylist('default')"><span>{$playlist_text}</span></div>
     </div>
 BUTTONS;
 }
@@ -481,6 +442,9 @@ function compareName( $a, $b ) {
 function loadPage( $song = '', $error = '', $songinfo = array() ) {
     global $width, $background, $backgroundimg, $accentfg, $accentbg, $menubg, $menushadow, $gradient1, $gradient2, $filebuttonfg;
 
+    // language settings
+    global $empty_song_title, $music_title, $shuffle_text, $browse_text, $playlist_text, $root_directory_text, $clear_text, $playlist_empty_text, $directory_empty_text;
+
     # hiding error message div if there is no message to display
     $errordisplay = empty( $error ) ? 'none' : 'block';
 
@@ -498,10 +462,10 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
     # setting player layout depending on available information
     if ( empty( $songinfo ) ) {
         # no information means no file is playing
-        $songtitle = 'No file playing';
+        $songtitle = $empty_song_title;
         $songinfoalign = 'center';
         $songsrc = '';
-        $pagetitle = "Music";
+        $pagetitle = $music_title;
 
         # hiding info elements
         $artist = '';
@@ -936,7 +900,8 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                 font-family: sans-serif; }
 
             html {
-                    background: {$background} url('{$backgroundimg}') no-repeat fixed center top;
+                    /*background: {$background} url('{$backgroundimg}') no-repeat fixed center top;*/
+                    background-color: #333;
                     background-size: cover;}
 
             body {
@@ -979,7 +944,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                         #songinfo { }
 
                             #songinfo div {
-                                    color: grey;
+                                    color: white;
                                     text-align: {$songinfoalign};
                                     font-size: 1.2vw;
                                     height: 1.4vw;
@@ -1211,7 +1176,6 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
 
 <div id="error">{$error}</div>
 <div id="interactioncontainer"></div>
-
 </body>
 </html>
 HTML;

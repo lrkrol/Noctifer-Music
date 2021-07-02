@@ -84,14 +84,15 @@ To install Noctifer Music, simply copy its files to a directory. It only needs t
 
 Most importantly, copy `index.php`. Now, when accessing this directory using a browser, the player will show that directory's compatible contents, ready to be played.
 
+Copy the contents of a sample config file (stored in the `sample-configs` folder) into `config.php`. You can modify the variables for customatization.
+
 Also copy `getID3` if you want metadata to be read. Otherwise, the player will merely show the filename and directory.
 
 The `backgrounds` folder contains background images for the three included themes. Copy these to make everything look slightly more appealing.
 
 ### Configuration
 
-`index.php` has a small number of variables at the beginning, allowing the player to be customised.
-
+`config.php` has a small number of variables, allowing the player to be customised.
 
 `$usepassword` allows password protection to be switched on (`true`) or off (`false`). When password protection is used, `$password` contains the plaintext password. This is a simple measure to block access; do not use a password you use anywhere else for this. 
 
@@ -101,7 +102,7 @@ The `backgrounds` folder contains background images for the three included theme
 
 In desktop mode, `$width` determines the width of the player as a percentage of the full window's width.
 
-The variables `$background`, `$accentfg`, `$accentbg`, `$menubg`, `$menushadow`, `$gradient1`, `$gradient2` and `$filebuttonfg` take hexadecimal colour values to adjust the colour scheme of the player. `$backgroundimg` takes an image path for the background image; `$background` is only visible when no image is indicated. Three theme configurations are included; these can be commented/uncommented as desired. 
+The variables `$background`, `$accentfg`, `$accentbg`, `$menubg`, `$menushadow`, `$gradient1`, `$gradient2` and `$filebuttonfg` take CSS colour values to adjust the colour scheme of the player. `$backgroundimg` takes an image path for the background image; `$background` is only visible when no image is indicated. Three theme configurations are included; these can be commented/uncommented as desired. 
 
 ### Usage
 
