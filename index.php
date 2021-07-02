@@ -20,9 +20,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-------------------------------------------
-This script was modified for personal use (changed the color sheme)
 */
 
 
@@ -245,10 +242,10 @@ PASSWORDREQUEST;
         # show "Password required [             ]"
         echo <<<PASSWORDREQUEST
 <div id="header"><div id="passwordrequest">
-    Geslo:
+    {$password_text}
     <form action="." method="post">
         <input type="password" name="password" id="passwordinput" />
-        <input type="submit" value="Submit" />
+        <input type="submit" value=" {$password_submit_text}" />
     </form>
 </div></div>';
 PASSWORDREQUEST;
@@ -290,7 +287,7 @@ PASSWORDREQUEST;
 
 function renderButtons() {
     // language settings
-    global $empty_song_title, $music_title, $shuffle_text, $browse_text, $playlist_text, $root_directory_text, $clear_text, $playlist_empty_text, $directory_empty_text;
+    global $empty_song_title, $music_title, $shuffle_text, $browse_text, $playlist_text, $root_directory_text, $clear_text, $playlist_empty_text, $directory_empty_text, $song_info_color;
 
     # toggling active class for active buttons
     $viewmode = ( isset( $_COOKIE['nm_viewmode'] ) && $_COOKIE['nm_viewmode'] == 'playlist' ) ? 'playlist' : 'browse';
@@ -443,7 +440,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
     global $width, $background, $backgroundimg, $accentfg, $accentbg, $menubg, $menushadow, $gradient1, $gradient2, $filebuttonfg;
 
     // language settings
-    global $empty_song_title, $music_title, $shuffle_text, $browse_text, $playlist_text, $root_directory_text, $clear_text, $playlist_empty_text, $directory_empty_text;
+    global $empty_song_title, $music_title, $shuffle_text, $browse_text, $playlist_text, $root_directory_text, $clear_text, $playlist_empty_text, $directory_empty_text, $song_info_color;
 
     # hiding error message div if there is no message to display
     $errordisplay = empty( $error ) ? 'none' : 'block';
@@ -944,7 +941,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                         #songinfo { }
 
                             #songinfo div {
-                                    color: white;
+                                    color:  {$song_info_color};
                                     text-align: {$songinfoalign};
                                     font-size: 1.2vw;
                                     height: 1.4vw;

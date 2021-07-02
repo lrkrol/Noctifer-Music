@@ -13,6 +13,7 @@ $menushadow = '#ddd';
 $gradient1 = '#1a1a1a';
 $gradient2 = '#444';
 $filebuttonfg = '#bbb';
+$song_info_color = "grey";
 
 $allowedextensions = array( 'mp3', 'flac', 'wav', 'ogg', 'opus', 'webm' );
 
@@ -30,6 +31,7 @@ $width = '50%';
 //$gradient1 = '#1a1a1a';
 //$gradient2 = '#444';
 //$filebuttonfg = '#bbb';
+//$song_info_color = "grey";
 
 # "forest"
 //$backgroundimg = './backgrounds/bg_forest.jpg';
@@ -41,6 +43,7 @@ $width = '50%';
 //$gradient1 = '#1a1a1a';
 //$gradient2 = '#444';
 //$filebuttonfg = '#bbb';
+//$song_info_color = "grey";
 
 # "simple theme" - author: @gigibu5
 // $background = '#333';
@@ -52,6 +55,7 @@ $width = '50%';
 // $menubg = '#ddd';
 // $menushadow = '#ccc';
 // $filebuttonfg = '#bbb';
+// $song_info_color = "white";
 
 # Language settings
 $empty_song_title = "Nobena skladba se ne predvaja.";
