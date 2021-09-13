@@ -68,13 +68,13 @@ What does getID3() do?
 ===========================================================================
 
 Reads & parses (to varying degrees):
- ¤ tags:
+ Â¤ tags:
   * APE (v1 and v2)
   * ID3v1 (& ID3v1.1)
   * ID3v2 (v2.4, v2.3, v2.2)
   * Lyrics3 (v1 & v2)
 
- ¤ audio-lossy:
+ Â¤ audio-lossy:
   * MP3/MP2/MP1
   * MPC / Musepack
   * Ogg (Vorbis, OggFLAC, Speex, Opus)
@@ -86,7 +86,7 @@ Reads & parses (to varying degrees):
   * DSS
   * VQF
 
- ¤ audio-lossless:
+ Â¤ audio-lossless:
   * AIFF
   * AU
   * Bonk
@@ -105,7 +105,7 @@ Reads & parses (to varying degrees):
   * WAV (RIFF)
   * WavPack
 
- ¤ audio-video:
+ Â¤ audio-video:
   * ASF: ASF, Windows Media Audio (WMA), Windows Media Video (WMV)
   * AVI (RIFF)
   * Flash
@@ -115,7 +115,7 @@ Reads & parses (to varying degrees):
   * Quicktime (including MP4)
   * RealVideo
 
- ¤ still image:
+ Â¤ still image:
   * BMP
   * GIF
   * JPEG
@@ -124,7 +124,7 @@ Reads & parses (to varying degrees):
   * SWF (Flash)
   * PhotoCD
 
- ¤ data:
+ Â¤ data:
   * ISO-9660 CD-ROM image (directory structure)
   * SZIP (limited support)
   * ZIP (directory structure)
@@ -145,9 +145,10 @@ Writes:
 Requirements
 ===========================================================================
 
-* PHP 4.2.0 up to 5.2.x for getID3() 1.7.x (and earlier)
-* PHP 5.0.5 (or higher) for getID3() 1.8.x (and up)
-* PHP 5.0.5 (or higher) for getID3() 2.0.x (and up)
+* PHP 4.2.0 up to 5.2.x for getID3() 1.7.x  (and earlier)
+* PHP 5.0.5 (or higher) for getID3() 1.8.x  (and up)
+* PHP 5.3.0 (or higher) for getID3() 1.9.17 (and up)
+* PHP 5.3.0 (or higher) for getID3() 2.0.x  (and up)
 * at least 4MB memory for PHP. 8MB or more is highly recommended.
   12MB is required with all modules loaded.
 
@@ -318,7 +319,7 @@ https://www.getid3.org/phpBB3/viewforum.php?f=7
   (http://web.inter.nl.net/users/hvdh/lossless/lossless.htm)
 * Support for RIFF-INFO chunks
   * http://lotto.st-andrews.ac.uk/~njh/tag_interchange.html
-    (thanks Nick Humfrey <njhØsurgeradio*co*uk>)
+    (thanks Nick Humfrey <njhÃ˜surgeradio*co*uk>)
   * http://abcavi.narod.ru/sof/abcavi/infotags.htm
     (thanks Kibi)
 * Better support for Bink video
@@ -333,23 +334,23 @@ https://www.getid3.org/phpBB3/viewforum.php?f=7
 * Support for IFF
 * Support for ICO
 * Support for ANI
-* Support for EXE (comments, author, etc) (thanks p*quaedackersØplanet*nl)
+* Support for EXE (comments, author, etc) (thanks p*quaedackersÃ˜planet*nl)
 * Support for DVD-IFO (region, subtitles, aspect ratio, etc)
-  (thanks p*quaedackersØplanet*nl)
+  (thanks p*quaedackersÃ˜planet*nl)
 * More complete support for SWF - parsing encapsulated MP3 and/or JPEG content
-    (thanks n8n8Øyahoo*com)
+    (thanks n8n8Ã˜yahoo*com)
 * Support for a2b
 * Optional scan-through-frames for AVI verification
-  (thanks rockcohenØmassive-interactive*nl)
-* Support for TTF (thanks infoØbutterflyx*com)
+  (thanks rockcohenÃ˜massive-interactive*nl)
+* Support for TTF (thanks infoÃ˜butterflyx*com)
 * Support for DSS (https://www.getid3.org/phpBB3/viewtopic.php?t=171)
 * Support for SMAF (http://smaf-yamaha.com/what/demo.html)
   https://www.getid3.org/phpBB3/viewtopic.php?t=182
 * Support for AMR (https://www.getid3.org/phpBB3/viewtopic.php?t=195)
 * Support for 3gpp (https://www.getid3.org/phpBB3/viewtopic.php?t=195)
-* Support for ID4 (http://www.wackysoft.cjb.net grizlyY2KØhotmail*com)
+* Support for ID4 (http://www.wackysoft.cjb.net grizlyY2KÃ˜hotmail*com)
 * Parse XML data returned in Ogg comments
-* Parse XML data from Quicktime SMIL metafiles (klausrathØmac*com)
+* Parse XML data from Quicktime SMIL metafiles (klausrathÃ˜mac*com)
 * ID3v2 genre string creator function
 * More complete parsing of JPG
 * Support for all old-style ASF packets
