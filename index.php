@@ -926,6 +926,15 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                     advance('previous');
                 }
             })
+	    // Get and set volume with cookie
+            var audio = document.getElementById('audio');
+            audio.addEventListener('volumechange', function() {
+                setCookie('volume', audio.volume, 14);
+            });
+            var volume = getCookie('volume');
+            if (volume != null && volume) {
+                audio.volume = volume;
+            }
         }, false);
     </script>
 
