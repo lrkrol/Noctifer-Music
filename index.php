@@ -4,8 +4,8 @@ session_start();
 error_reporting( 0 );
 
 /*
-Noctifer Music 0.6.1
-Copyright 2019 Laurens R Krol
+Noctifer Music 0.7.0
+Copyright 2019, 2022 Laurens R. Krol
 noctifer.net, lrkrol.com
 
 This program is free software: you can redistribute it and/or modify
@@ -80,6 +80,10 @@ $filebuttonfg = '#bbb';
 # +---------------------------+
 # |     C H A N G E L O G     |
 # +---------------------------+
+
+2022-10-27 0.7.0
+- Added cookie to maintain volume when changed
+- Minor cleanup
 
 2019-04-08 0.6.1
 - Added keyboard shortcuts and swipe events
@@ -218,7 +222,7 @@ if( isset( $_POST['password'] ) ) {
         <input type="password" name="password" id="passwordinput" />
         <input type="submit" value="Submit" />
     </form>
-</div></div>';
+</div></div>
 PASSWORDREQUEST;
     } else {
     
@@ -839,15 +843,27 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         };
 
         document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById('audio').addEventListener('error', function() {
+            var audio = document.getElementById('audio');
+            
+            audio.addEventListener('error', function() {
                 document.getElementById('error').innerHTML = 'Playback error';
                 document.getElementById('error').style.display = 'block';
                 setTimeout(function(){ advance('next'); }, 2000);
             });
 
-            document.getElementById('audio').addEventListener('ended', function() {
+            audio.addEventListener('ended', function() {
                 advance('next');
             });
+            
+            
+            audio.addEventListener('volumechange', function() {
+                setCookie('nm_volume', audio.volume, 14);
+            });
+            
+            var volume = getCookie('nm_volume');
+            if (volume != null && volume) {
+                audio.volume = volume;
+            }
 
             {$onloadgoto}
         }, false);
@@ -881,9 +897,6 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                     break;
                 case 39: // right
                     advance('next');
-                    break;
-                case 13: // enter
-                    toggleView('$photoUrl');
                     break;
             }
         };
