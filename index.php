@@ -81,6 +81,11 @@ $filebuttonfg = '#bbb';
 # |     C H A N G E L O G     |
 # +---------------------------+
 
+2023-03-02 0.7.3
+- Added error when entering incorrect password
+- Replaced all urlencode() calls with rawurlencode()
+- Encoded audio src call
+
 2022-10-27 0.7.0
 - Added cookie to maintain volume when changed
 - Minor cleanup
@@ -145,11 +150,13 @@ if( isset( $_POST['password'] ) ) {
     if ( htmlspecialchars($password) == htmlspecialchars( $_POST['password'] ) ) {
         $_SESSION['authenticated'] = 'yes';
         header( "Location: {$_SERVER['HTTP_REFERER']}" );
+    } else {
+        loadPage('', 'Incorrect password', '');
     }
 } elseif( isset( $_GET['play'] ) ) {
     ### playing the indicated song
     $song = sanitizeGet( $_GET['play'] );
-
+    
     if ( is_file( $song ) ) {
         # obtaining song info
         $songinfo = getsonginfo( $song );
@@ -161,7 +168,7 @@ if( isset( $_POST['password'] ) ) {
         } unset($file);
 
         # setting cookies
-        setcookie( 'nm_nowplaying', urlencode( $song ), strtotime( '+1 day' ) );
+        setcookie( 'nm_nowplaying', rawurlencode( $song ), strtotime( '+1 day' ) );
         setcookie( 'nm_songs_currentsongdir', json_encode( $dirsonglist['files'] ), strtotime ( '+1 week' ) );
         
         # updating active song list and active song index
@@ -205,9 +212,9 @@ if( isset( $_POST['password'] ) ) {
         $currentindex = $_COOKIE['nm_songs_active_idx'];
 
         if ( $which === 'next' && isset( $songlist[$currentindex + 1] ) ) {
-            echo urlencode( $songlist[$currentindex + 1] );
+            echo rawurlencode( $songlist[$currentindex + 1] );
         } elseif ( $which === 'previous' && isset( $songlist[$currentindex - 1] ) ) {
-            echo urlencode( $songlist[$currentindex - 1] );
+            echo rawurlencode( $songlist[$currentindex - 1] );
         }
     }
 } elseif( isset( $_GET['dir'] ) )  {
@@ -230,7 +237,7 @@ PASSWORDREQUEST;
 
         if ( is_dir( $basedir ) && !in_array( '..', explode( '/', $basedir ) ) ) {
             # setting currentbrowsedir cookie
-            setcookie( 'nm_currentbrowsedir', urlencode( $basedir ), strtotime( '+1 day' ) );
+            setcookie( 'nm_currentbrowsedir', rawurlencode( $basedir ), strtotime( '+1 day' ) );
 
             # listing directory contents
             $dircontents = getDirContents( $basedir );
@@ -248,7 +255,7 @@ PASSWORDREQUEST;
                     echo "<span id=\"breadcrumbactive\">{$title}</span>";
                 } else {
                     # previous directories with link
-                    $link = urlencode( implode( '/', array_slice( $breadcrumbs, 0, $i+1 ) ) );
+                    $link = rawurlencode( implode( '/', array_slice( $breadcrumbs, 0, $i+1 ) ) );
                     echo "<span class=\"breadcrumb\" onclick=\"goToDir('{$link}');\">{$title}</span><span class=\"separator\">/</span>";
                 }
             }
@@ -263,7 +270,7 @@ PASSWORDREQUEST;
                 if ( !empty( $dircontents['dirs'] ) ) {
                     echo '<div id="dirlist" class="list">';
                     foreach ( $dircontents['dirs'] as $dir ) {
-                        $link = urlencode( $basedir . '/' . $dir );
+                        $link = rawurlencode( $basedir . '/' . $dir );
                         echo "<div class=\"dir\" onclick=\"goToDir('{$link}');\">{$dir}</div>";
                     } unset( $dir );
                     echo '</div>';
@@ -273,7 +280,7 @@ PASSWORDREQUEST;
                 if ( !empty( $dircontents['files'] ) ) {
                     echo '<div id="filelist" class="list">';
                     foreach ( $dircontents['files'] as $file ) {
-                        $link = urlencode( $basedir . '/' . $file );
+                        $link = rawurlencode( $basedir . '/' . $file );
                         $song = pathinfo( $file, PATHINFO_FILENAME );
                         $jslink = str_replace( "'", "\'", $link );
                         $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
@@ -296,7 +303,7 @@ PASSWORDREQUEST;
         <input type="password" name="password" id="passwordinput" />
         <input type="submit" value="Submit" />
     </form>
-</div></div>';
+</div></div>
 PASSWORDREQUEST;
     } else {
         if ( isset( $_COOKIE['nm_songs_playlist'] ) ) {
@@ -320,7 +327,7 @@ PASSWORDREQUEST;
                 
                 $playlistdir = ( $dir == '.' ? '' : "<span class=\"playlistdirectory\">{$dir}</span><br />" );
                 
-                $link = urlencode( $link );
+                $link = rawurlencode( $link );
                 $nowplaying = ( isset( $_COOKIE['nm_nowplaying'] ) && $_COOKIE['nm_nowplaying'] == $link ) ? ' nowplaying' : '';
                 $jslink = str_replace( "'", "\'", $link );
                 echo "<div class=\"file{$nowplaying}\"><a href=\"?play={$link}\" onclick=\"setPlayMode('playlist', '{$jslink}');\">{$playlistdir}&#x25ba; {$song}<br /></a><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', -1);\"title=\"Move up\">&#x2191</div><div class=\"filebutton\" onclick=\"moveInPlaylist('{$jslink}', 1);\"title=\"Move down\">&#x2193</div><div class=\"filebutton\" onclick=\"removeFromPlaylist('{$jslink}');\" title=\"Remove from playlist\">&#x00d7</div></div>";
@@ -521,7 +528,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         $artdisplay = 'none';
     } else {
         # displaying info elements where available
-        $songsrc = " src=\"{$song}\"";
+        $songsrc = " src=\"" . implode('/', array_map('rawurlencode', explode('/', $song))) . "\""; # encoding individual path elements while keeping separators
         $songtitle = $songinfo['title'];
         $pagetitle = $songtitle;
         if ( !empty( $songinfo['artist'] ) ) {
@@ -848,7 +855,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
             audio.addEventListener('error', function() {
                 document.getElementById('error').innerHTML = 'Playback error';
                 document.getElementById('error').style.display = 'block';
-                setTimeout(function(){ advance('next'); }, 2000);
+                // setTimeout(function(){ advance('next'); }, 2000);
             });
 
             audio.addEventListener('ended', function() {
