@@ -153,7 +153,7 @@ $filebuttonfg = '#bbb';
 
 if( isset( $_POST['password'] ) ) {
   foreach ($password as &$pwvalue) {
-    if ( htmlspecialchars($password) == htmlspecialchars( $_POST['password'] ) ) {
+    if ( htmlspecialchars($pwvalue) == htmlspecialchars( $_POST['password'] ) ) {
         $_SESSION['authenticated'] = 'yes';
         header( "Location: {$_SERVER['HTTP_REFERER']}" );
     } else {
