@@ -6,7 +6,7 @@ Try the [**live demo**](https://music.lrk.tools/demo) using the password 123.
 
 ![Noctifer Music Screenshot](./default.jpg)
 
-The current version is 0.6.1. 
+The current version is 0.7.3. 
 
 
 ## Features

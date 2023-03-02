@@ -855,7 +855,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
             audio.addEventListener('error', function() {
                 document.getElementById('error').innerHTML = 'Playback error';
                 document.getElementById('error').style.display = 'block';
-                // setTimeout(function(){ advance('next'); }, 2000);
+                setTimeout(function(){ advance('next'); }, 2000);
             });
 
             audio.addEventListener('ended', function() {
