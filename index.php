@@ -4,7 +4,7 @@ session_start();
 error_reporting( 0 );
 
 /*
-Noctifer Music 0.7.0
+Noctifer Music 0.7.3
 Copyright 2019, 2022 Laurens R. Krol
 noctifer.net, lrkrol.com
 
