@@ -29,7 +29,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # whether or not to ask for a password, and if yes, the password to access directory/playlist contents
 $usepassword = true;
-$password = '123';
+
+# password array for multiple password support
+$password = array('Password1','Password2','Password3');
 
 # files with the following extensions will be displayed (case-insensitive)
 # note that it depends on your browser whether or not these will actually play
@@ -80,6 +82,9 @@ $filebuttonfg = '#bbb';
 # +---------------------------+
 # |     C H A N G E L O G     |
 # +---------------------------+
+
+2023-03-02 0.7.4
+- Add password array for mulitple password support
 
 2023-03-02 0.7.3
 - Added error when entering incorrect password
@@ -147,12 +152,14 @@ $filebuttonfg = '#bbb';
 
 
 if( isset( $_POST['password'] ) ) {
+  foreach ($password as &$pwvalue) {
     if ( htmlspecialchars($password) == htmlspecialchars( $_POST['password'] ) ) {
         $_SESSION['authenticated'] = 'yes';
         header( "Location: {$_SERVER['HTTP_REFERER']}" );
     } else {
         loadPage('', 'Incorrect password', '');
     }
+  }
 } elseif( isset( $_GET['play'] ) ) {
     ### playing the indicated song
     $song = sanitizeGet( $_GET['play'] );
