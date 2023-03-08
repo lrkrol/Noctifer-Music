@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 $usepassword = true;
 
 # new password arrady for multiple passwords
-$password = array('Password1','123abc456xyz','Password333','PWfourPW');
+$passwords = array('Password1','123abc456xyz','Password333','PWfourPW');
 
 # files with the following extensions will be displayed (case-insensitive)
 # note that it depends on your browser whether or not these will actually play
@@ -152,11 +152,9 @@ $filebuttonfg = '#bbb';
 
 
 if( isset( $_POST['password'] ) ) {
-  foreach ($password as &$pwvalue) {
-    if ( htmlspecialchars($pwvalue) == htmlspecialchars( $_POST['password'] ) ) {
-        $_SESSION['authenticated'] = 'yes';
-        header( "Location: {$_SERVER['HTTP_REFERER']}" );
-    }
+  if ( in_array( htmlspecialchars( $_POST['password'] ), array_map( 'htmlspecialchars', $passwords ), true ) ) {
+    $_SESSION['authenticated'] = 'yes';
+    header( "Location: {$_SERVER['HTTP_REFERER']}" );
   }
   if (!isset($_SESSION['authenticated'])) {
       loadPage('', 'Incorrect password', '');
