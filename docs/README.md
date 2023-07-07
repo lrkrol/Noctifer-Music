@@ -6,8 +6,6 @@ Try the [**live demo**](https://music.lrk.tools/demo) using the password 123.
 
 ![Noctifer Music Screenshot](./default.jpg)
 
-The current version is 0.7.3. 
-
 
 ## Features
 
@@ -65,7 +63,7 @@ On mobile, swiping left/right switches to the next/previous track.
 
 ### Password protection
 
-Direct links to individual files will always play, but access to directory contents can be password-protected. 
+Direct links to individual files will always play, but access to directory contents can be password-protected. Multiple passwords can be indicated in a password array, for example to grant and remove access for different persons.
 
 ### Different themes
 
