@@ -4,8 +4,8 @@ session_start();
 error_reporting( 0 );
 
 /*
-Noctifer Music 0.7.3
-Copyright 2019, 2022 Laurens R. Krol
+Noctifer Music 0.7.5
+Copyright 2019, 2022, 2023 Laurens R. Krol
 noctifer.net, lrkrol.com
 
 This program is free software: you can redistribute it and/or modify
@@ -27,9 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # |     C O N F I G U R A T I O N     |
 # +-----------------------------------+
 
-# whether or not to ask for a password, and if yes, the password to access directory/playlist contents
+# whether or not to ask for a password, and if yes, the array of allowed passwords to access directory/playlist contents
 $usepassword = true;
-$password = '123';
+$passwords = array('123', 'abc');
 
 # files with the following extensions will be displayed (case-insensitive)
 # note that it depends on your browser whether or not these will actually play
@@ -77,9 +77,14 @@ $filebuttonfg = '#bbb';
 
 
 /*
-# +---------------------------+
-# |     C H A N G E L O G     |
-# +---------------------------+
+
++---------------------------+
+|     C H A N G E L O G     |
++---------------------------+
+
+2023-07-07 0.7.5
+- Removed albumart background colour
+- Replaced single password with password array
 
 2023-03-02 0.7.3
 - Added error when entering incorrect password
@@ -147,7 +152,7 @@ $filebuttonfg = '#bbb';
 
 
 if( isset( $_POST['password'] ) ) {
-    if ( htmlspecialchars($password) == htmlspecialchars( $_POST['password'] ) ) {
+    if ( in_array ( htmlspecialchars( $_POST['password'] ), array_map( 'htmlspecialchars', $passwords ), true ) ) {
         $_SESSION['authenticated'] = 'yes';
         header( "Location: {$_SERVER['HTTP_REFERER']}" );
     } else {
@@ -997,7 +1002,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                             width: 7.25vw;
                             height: 7.25vw;
                             margin-right: 10px;
-                            background: #333 url({$art}) center center / contain no-repeat; }
+                            background: url({$art}) center center / contain no-repeat; }
 
                     #song {
                             flex-grow: 1;
